@@ -54,6 +54,12 @@ html,body{height:100%;overflow:hidden;font-family:"Segoe UI",Roboto,Arial,sans-s
 .hint{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);z-index:20;
   font-size:12px;color:#8fa3c8;background:rgba(10,14,22,.85);border:1px solid #24344f;
   padding:5px 14px;border-radius:20px;white-space:nowrap}
+#devBadge{position:fixed;top:14px;right:20px;z-index:30;
+  font-size:11px;letter-spacing:.6px;text-transform:uppercase;font-weight:600;
+  color:#ffd28a;background:rgba(255,170,60,.12);border:1px solid rgba(255,190,90,.5);
+  border-radius:20px;padding:7px 16px;animation:breathe 2.4s ease-in-out infinite;
+  pointer-events:none}
+@keyframes breathe{0%,100%{opacity:.75}50%{opacity:1;box-shadow:0 0 18px rgba(255,170,60,.35)}}
 </style>
 </head>
 <body>
@@ -70,6 +76,8 @@ html,body{height:100%;overflow:hidden;font-family:"Segoe UI",Roboto,Arial,sans-s
   <p>Нажмите «＋ Корень», чтобы создать центральный узел.<br>
   Потом выбирайте узел и жмите «＋ Узел к выбранному», чтобы добавить ветвь.</p>
 </div>
+
+<div id="devBadge">В процессе разработки</div>
 
 <div class="hint">клик по узлу — выбрать · двойной клик — переименовать · ✕ — удалить · перетаскивайте узлы, зум колесом</div>
 <div class="credit">Автор разработки: Линкольн</div>
