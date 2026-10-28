@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Хронология / Действия</title>
+<link rel="icon" type="image/jpeg" href="icon.jpg">
+<meta name="description" content="Интерактивная доска для построения хронологии событий, карточек-досье и связей-паутины.">
+<meta name="yandex-verification" content="chronology-site">
+<style>
+:root{
+  --bg:#050505;
+  --panel:#0f0f0f;
+  --line:#ffffff;
+  --line-dim:rgba(255,255,255,.18);
+  --ink:#000000;
+  --card:#f6f6f6;
+  --accent:#ffffff;
+  --muted:rgba(255,255,255,.55);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;
+  font-family:"Segoe UI",Roboto,Arial,sans-serif;user-select:none}
+body{overscroll-behavior:none}
+
+/* ---- background particles ---- */
+#scene{position:fixed;inset:0;z-index:0;background:
+  radial-gradient(1200px 600px at 20% 10%, rgba(255,255,255,.05), transparent 60%),
+  radial-gradient(1000px 700px at 85% 85%, rgba(150,180,255,.05), transparent 60%),
+  radial-gradient(900px 900px at 60% 40%, rgba(120,140,255,.03), transparent 65%),
+  var(--bg)}
+#scene::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(600px 400px at 30% 70%, rgba(255,160,120,.025), transparent 60%)}
+#web{position:fixed;inset:0;z-index:1;pointer-events:none;transition:opacity .4s}
+#particles{position:fixed;inset:0;z-index:2;pointer-events:none}
+#scene,#web,#particles{transition:opacity .5s}
+body.web-off #web{opacity:0}
+#webToggle{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
+  border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
+  transition:background .2s,color .2s,box-shadow .25s}
+#webToggle:hover{color:#fff;background:rgba(90,140,255,.35);border-color:rgba(120,170,255,.7)}
+#webToggle.on{background:#fff;color:#000;font-weight:700;box-shadow:0 0 22px rgba(255,255,255,.5)}
+#webClear{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
+  border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
+  transition:background .2s,color .2s,box-shadow .25s}
+#webClear:hover{color:#fff;background:rgba(255,70,70,.4);border-color:rgba(255,100,100,.8)}
+#saveFile,#loadFile{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
+  border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
+  transition:background .2s,color .2s,box-shadow .25s}
+#saveFile:hover{color:#fff;background:rgba(46,204,113,.4);border-color:rgba(80,220,150,.8)}
+#loadFile:hover{color:#fff;background:rgba(52,152,219,.4);border-color:rgba(100,190,255,.8)}
+#saveFile.on,#loadFile.on{background:#fff;color:#000;font-weight:700}
+#saveFile.on:hover{background:rgba(46,204,113,.4);color:#fff}
+#loadFile.on:hover{background:rgba(52,152,219,.4);color:#fff}
+/* status toggle buttons in header */
+.statusWrap{display:flex;gap:6px;height:46px}
+.stBtn{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
+  border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
+  transition:background .2s,color .2s,box-shadow .25s;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.stBtn .led{width:12px;height:12px;border-radius:50%;flex:none;transition:box-shadow .25s,background .25s}
+.stBtn#doneBtn.on{background:#12401f;color:#9fffc3;border-color:rgba(46,204,113,.8);font-weight:700}
+.stBtn#doneBtn.on .led{background:#2ecc71;box-shadow:0 0 12px rgba(46,204,113,.9)}
+.stBtn#undoneBtn.on{background:#401a1a;color:#ff9f9f;border-color:rgba(255,80,80,.8);font-weight:700}
+.stBtn#undoneBtn.on .led{background:#ff3b3b;box-shadow:0 0 12px rgba(255,60,60,.9)}
+.stBtn:not(.on) .led{background:#555}
+.stBtn#doneBtn:hover{color:#b8ffd0;background:rgba(46,204,113,.35);border-color:rgba(120,240,170,.8)}
+.stBtn#undoneBtn:hover{color:#ffc0c0;background:rgba(255,60,60,.35);border-color:rgba(255,120,120,.8)}
+
+/* ---- header ---- */
+header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:center;gap:14px;
+  padding:12px 18px;background:linear-gradient(180deg,rgba(5,5,5,.85),rgba(5,5,5,0));
+  backdrop-filter:blur(2px)}
+.logo{font-size:20px;font-weight:700;letter-spacing:2px;white-space:nowrap;
+  text-transform:uppercase}
+.logo b{font-weight:800}
+.logo .sl{color:var(--muted);font-weight:300}
+
+#clock{font-variant-numeric:tabular-nums;font-size:15px;letter-spacing:1px;
+  color:#fff;background:var(--panel);border:1px solid var(--line-dim);padding:0 14px;
+  border-radius:12px;height:46px;display:flex;align-items:center;font-weight:700;
+  box-shadow:0 0 20px rgba(255,255,255,.08)}
+#clock .dz{font-weight:400;opacity:.6;font-size:12px;margin-left:8px}
+
+#devBadge{font-size:13px;letter-spacing:.3px;color:#ffd28a;background:rgba(255,170,60,.12);
+  border:1px solid rgba(255,190,90,.55);border-radius:12px;padding:0 16px;height:46px;
+  display:flex;align-items:center;font-weight:600;white-space:nowrap;
+  box-shadow:0 0 20px rgba(255,170,60,.15)}
+
+/* zoom & pan controls */
+#zoom{display:flex;align-items:center;gap:2px;background:var(--panel);
+  border:1px solid var(--line-dim);border-radius:12px;padding:2px 4px;height:46px}
+#zoom button{width:32px;height:40px;border:none;background:transparent;color:#fff;
+  cursor:pointer;font-size:18px;font-weight:700;line-height:1;transition:transform .12s,color .2s}
+#zoom button:hover{color:#000;background:#fff;border-radius:8px;transform:scale(1.12)}
+#zoom .pct{min-width:46px;text-align:center;color:var(--muted);font-size:11px;
+  font-variant-numeric:tabular-nums;letter-spacing:.3px}
+#resetView{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
+  border-radius:12px;padding:0 12px;height:46px;cursor:pointer;font-size:13px;
+  transition:background .2s,color .2s}
+#resetView:hover{color:#fff;background:rgba(155,89,182,.4);border-color:rgba(190,130,255,.8)}
+
+/* add button */
+#addBtn{border:1px solid #fff;background:#fff;color:#000;font-weight:700;
+  border-radius:12px;padding:0 18px;height:46px;cursor:pointer;font-size:15px;
+  letter-spacing:.5px;transition:transform .15s,box-shadow .25s}
+#addBtn:hover{transform:scale(1.04);box-shadow:0 0 24px rgba(255,255,255,.35);background:#fff0d0;border-color:#7a4a00;color:#7a4a00}
+#addBtn:active{transform:scale(.97)}
+
+/* ---- cards & infinite canvas ---- */
+#board{position:fixed;inset:0;z-index:5;cursor:grab;overflow:hidden;touch-action:none}
+#board.panning{cursor:grabbing}
+#world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+#world.smooth{transition:transform .35s cubic-bezier(.22,1,.36,1)}
+.card{position:absolute;width:258px;background:var(--card);color:var(--ink);
+  border-radius:14px;box-shadow:0 10px 34px rgba(0,0,0,.5),0 0 0 1px rgba(0,0,0,.08);
+  animation:pop .55s cubic-bezier(.2,1.4,.3,1);cursor:grab;touch-action:none;
+  will-change:transform;transform-style:preserve-3d;
+  transition:transform .35s cubic-bezier(.2,1.2,.3,1), box-shadow .4s ease, background .3s ease, border-radius .35s ease;
+  }
+.card::after{content:"";position:absolute;inset:0;border-radius:14px;pointer-events:none;
+  background:linear-gradient(140deg,rgba(255,255,255,.25),transparent 45%);opacity:0;
+  transition:opacity .4s ease}
+.card:hover::after{opacity:1}
+/* tilt toward cursor, driven by CSS vars --tx/--ty/--rot set in JS */
+.card{--tx:0px;--ty:0px;--rot:0deg;--scale:1}
+.card.hovering{transform:translateY(-8px) translate(var(--tx),var(--ty)) rotate(var(--rot)) scale(var(--scale));
+  z-index:30;box-shadow:0 30px 70px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.14),0 0 50px rgba(180,200,255,.25)}
+.card.dragging{cursor:grabbing;box-shadow:0 18px 50px rgba(0,0,0,.7);z-index:50;
+  transition:box-shadow .2s,transform .15s}
+@keyframes pop{from{transform:scale(.6) rotateZ(-3deg);opacity:0}to{transform:scale(1) rotateZ(0);opacity:1}}
+.card .glowAccent{position:absolute;inset:0;border-radius:14px;pointer-events:none;opacity:0;
+  transition:opacity .4s ease;background:radial-gradient(200px 120px at 30% 0%, rgba(120,180,255,.25), transparent 70%)}
+.card:hover .glowAccent{opacity:1}
+.card .head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.08);position:relative}
+.card .dot{width:9px;height:9px;border-radius:50%;background:#000;flex:none}
+.card .dt{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.4px}
+.card .dt .t{color:#555;font-weight:600}
+.card .rm{margin-left:auto;border:none;background:transparent;color:#999;cursor:pointer;
+  font-size:16px;line-height:1;padding:2px 4px;transition:color .2s}
+.card .rm:hover{color:#c00}
+.card .linkport{width:12px;height:12px;border-radius:50%;border:2px solid #555;background:#fff;
+  cursor:crosshair;flex:none;position:relative;transition:background .2s,border-color .2s,box-shadow .2s}
+.card .linkport:hover{background:#ffd;border-color:#000;box-shadow:0 0 10px rgba(255,255,150,.8)}
+.card .body{padding:12px}
+.card .title{font-size:15px;font-weight:800;margin-bottom:6px;line-height:1.25}
+.card .desc{font-size:13px;color:#333;white-space:pre-wrap;line-height:1.45;margin-bottom:8px}
+.card .photos{display:flex;flex-wrap:wrap;gap:6px}
+.card .photos img{width:100%;height:120px;object-fit:cover;border-radius:4px;
+  background:#ddd;display:block}
+.card .subs{border-top:1px dashed rgba(0,0,0,.18);margin-top:8px;padding-top:6px}
+.card .subrow{font-size:12px;color:#333;line-height:1.4}
+.card .subrow .k{font-weight:700;color:#000}
+.card .notes{margin-top:8px;font-size:12px;color:#444;background:rgba(0,0,0,.05);
+  border-radius:6px;padding:6px 8px;white-space:pre-wrap;font-style:italic}
+.card .tabs{display:flex;gap:4px;padding:6px 10px 0}
+.card .tab{flex:1;border:1px solid rgba(0,0,0,.15);background:transparent;border-radius:6px;
+  padding:4px 0;font-size:11px;font-weight:700;color:#555;cursor:pointer;font-family:inherit;
+  transition:all .15s}
+.card .tab:hover{background:rgba(0,0,0,.06)}
+.card .tab.on{background:#000;color:#fff;border-color:#000}
+.card .tabpage{display:none}
+.card .tabpage.on{display:block}
+.card .title{font-size:15px;font-weight:800;margin-bottom:6px;line-height:1.25}
+.card .extraTables{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.card .extraTable{border:1px solid rgba(0,0,0,.15);border-radius:6px;padding:6px 8px}
+.card .extraTable .et-title{font-weight:800;font-size:12px;color:#000;margin-bottom:3px}
+.card .extraTable ul{list-style:none;margin:0;padding:0}
+.card .extraTable li{font-size:12px;color:#333;padding:1px 0;line-height:1.4}
+.card .extraTable li::before{content:"· ";color:#888}
+.card .muted{font-size:11px;color:#666;margin-top:8px;font-style:italic}
+
+/* card color themes — harmonious, readable */
+.card.c-red{--bg:#ffd6d1;--acc:#c0392b;--ink:#6b1510}
+.card.c-green{--bg:#d2f0dd;--acc:#1e8e4e;--ink:#0a4020}
+.card.c-gray{--bg:#e3e6ea;--acc:#5c6570;--ink:#232a31}
+.card.c-purple{--bg:#e5d9f8;--acc:#7a48c9;--ink:#3c2270}
+.card.c-yellow{--bg:#fceeb6;--acc:#b8860b;--ink:#5c4400}
+.card.themed{background:var(--bg);box-shadow:0 12px 34px rgba(0,0,0,.5),0 0 0 2px var(--acc)}
+.card.themed .head{border-bottom-color:var(--acc)}
+.card.themed .dot{background:var(--acc)}
+.card.themed .dt,.card.themed .title,.card.themed .subrow .k{color:var(--ink)}
+.card.themed .t,.card.themed .subrow{color:var(--ink)}
+.card.themed .tab.on{background:var(--acc);border-color:var(--acc)}
+.card.themed .tab{border-color:var(--acc)}
+.card.themed .swatch.sel{box-shadow:0 0 0 2px var(--acc)}
+.card .colorbar{display:flex;gap:5px;padding:8px 12px 4px}
+.card .swatch{width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.2);cursor:pointer;flex:none}
+.card .swatch.sel{box-shadow:0 0 0 2px #000}
+/* status shown ONLY via the little circle on the card head */
+.card .statusLamp{width:14px;height:14px;border-radius:50%;flex:none;
+  border:2px solid rgba(0,0,0,.25);transition:background .3s,box-shadow .3s}
+.card .statusLamp.done{background:#2ecc71;box-shadow:0 0 10px rgba(46,204,113,.9);border-color:rgba(46,204,113,.5)}
+.card .statusLamp.undone{background:#ff3b3b;box-shadow:0 0 10px rgba(255,60,60,.9);border-color:rgba(255,80,80,.5)}
+
+/* ---- hint & empty ---- */
+#hint{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:20;
+  color:var(--muted);font-size:13px;letter-spacing:.3px;text-align:center;
+  pointer-events:none;animation:breathe 4s ease-in-out infinite;white-space:nowrap}
+#credit{display:block;margin-top:4px;font-size:8px;letter-spacing:.5px;
+  text-transform:uppercase;font-weight:500;
+  color:#ffffff;text-shadow:0 0 6px rgba(255,255,255,.9),0 0 14px rgba(255,255,255,.45)}
+@keyframes breathe{0%,100%{opacity:.5}50%{opacity:1}}
+#empty{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;z-index:4;pointer-events:none;text-align:center;gap:14px}
+#empty h2{font-size:26px;font-weight:300;letter-spacing:4px}
+#empty p{color:var(--muted);max-width:420px;line-height:1.6}
+#empty .plus{font-size:60px;font-weight:200;color:#fff;opacity:.7;animation:floaty 3s ease-in-out infinite}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+/* link mode */
+#linkBtn{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
+  border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
+  transition:background .2s,color .2s,box-shadow .25s}
+#linkBtn:hover{color:#fff;background:rgba(255,165,0,.4);border-color:rgba(255,190,90,.8)}
+#linkBtn.on{background:#fff;color:#000;font-weight:700;box-shadow:0 0 22px rgba(255,255,255,.5)}
+#board.linkmode #world{filter:brightness(1.08)}
+#board.linkmode .card{cursor:crosshair;box-shadow:0 0 0 2px #fff,0 10px 34px rgba(0,0,0,.6)}
+#board.linkmode .card.pick{box-shadow:0 0 0 3px #fff,0 0 30px rgba(255,255,255,.6);
+  transform:scale(1.03);z-index:40}
+#linkTip{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:45;
+  background:#fff;color:#000;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:700;
+  box-shadow:0 8px 30px rgba(0,0,0,.6);display:none;animation:tipIn .2s}
+#linkTip.show{display:block}
+@keyframes tipIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%)}}
+
+/* ---- fullscreen card expansion animation ---- */
+#detailModal .box{transform-origin:center;transition:none;position:relative}
+#detailModal.open .box{animation:cardGrow .65s cubic-bezier(.16,1.08,.3,1) both}
+@keyframes cardGrow{
+  0%{transform:translate(var(--sx,0px),var(--sy,0px)) scale(.1) rotate3d(1,-1,.5,45deg);opacity:0;border-radius:50%}
+  45%{opacity:1;border-radius:10px}
+  100%{transform:translate(0,0) scale(1) rotate3d(0,0,0,0);opacity:1;border-radius:10px;box-shadow:0 40px 120px rgba(0,0,0,.7)}
+}
+/* entrance sweep effects layered on the box */
+#detailModal.open .box::before{
+  content:"";position:absolute;inset:0;border-radius:10px;pointer-events:none;
+  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.7) 50%,transparent 70%);
+  background-size:300% 300%;animation:sheen 1s ease forwards;mix-blend-mode:overlay;z-index:5}
+@keyframes sheen{0%{background-position:120% 0}100%{background-position:-120% 0}}
+#detailModal.open .box h3{animation:titleIn .5s .25s cubic-bezier(.2,1.6,.3,1) both}
+#detailModal.open .fields{animation:fieldsIn .5s .35s cubic-bezier(.2,1.4,.3,1) both}
+#detailModal.open .actions{animation:actionsIn .4s .5s cubic-bezier(.2,1.4,.3,1) both}
+@keyframes titleIn{from{transform:translateX(-24px);opacity:0;letter-spacing:6px}to{transform:none;opacity:1;letter-spacing:0}}
+@keyframes fieldsIn{from{transform:scale(.9) translateY(16px);opacity:0}to{transform:none;opacity:1}}
+@keyframes actionsIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ---- modal ---- */
+.modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(3px)}
+.modal.open{display:flex;animation:fade .25s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.box{width:min(560px,92vw);max-height:86vh;overflow:auto;background:#fff;color:#000;
+  border-radius:10px;box-shadow:0 30px 80px rgba(0,0,0,.6);animation:rise .4s cubic-bezier(.2,1.3,.3,1)}
+@keyframes rise{from{transform:translateY(30px) scale(.96);opacity:0}to{transform:none;opacity:1}}
+.box h3{font-size:18px;padding:18px 22px;border-bottom:1px solid #e5e5e5}
+
+/* animated time/date picker inside modal (spin slots) */
+.selectors{display:flex;gap:8px;flex-wrap:wrap;padding:20px 22px 6px}
+.slot{flex:1;min-width:80px;text-align:center;border:1px solid #e0e0e0;border-radius:10px;
+  cursor:pointer;padding:12px 6px;transition:all .2s;position:relative;overflow:hidden}
+.slot .kind{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px}
+.slot .num{font-size:26px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.slot .sub{font-size:11px;color:#666}
+.slot.active{border-color:#000;box-shadow:0 0 0 2px #000,0 8px 20px rgba(0,0,0,.2);transform:translateY(-2px)}
+.slot.active::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:#000;
+  animation:slideIn .3s}
+@keyframes slideIn{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+#slotList{max-height:240px;overflow-y:auto;margin:0 22px 14px;border-radius:10px;
+  border:1px solid #eee;background:#fafafa}
+#slotList button{display:block;width:100%;text-align:left;padding:12px 16px;border:none;
+  background:transparent;font-size:16px;cursor:pointer;border-bottom:1px solid #f0f0f0;
+  transition:background .15s,transform .15s;font-variant-numeric:tabular-nums}
+#slotList button:last-child{border-bottom:none}
+#slotList button:hover{background:#000;color:#fff;transform:translateX(4px)}
+
+.fields{padding:6px 22px 14px;display:flex;flex-direction:column;gap:12px}
+.fields label{font-size:12px;color:#666;margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.5px}
+.fields input[type=text],.fields textarea,.fields input[type=number]{
+  width:100%;border:1px solid #ddd;border-radius:8px;padding:11px 12px;font-size:14px;
+  font-family:inherit;color:#000;background:#fff;transition:border .2s,box-shadow .2s}
+.fields input:focus,.fields textarea:focus{border-color:#000;outline:none;box-shadow:0 0 0 2px rgba(0,0,0,.15)}
+.fields textarea{resize:vertical;min-height:70px}
+
+.profileBlock{border:1px dashed #ccc;border-radius:10px;padding:14px}
+.profileBlock h4{font-size:13px;margin-bottom:10px;color:#000;text-transform:uppercase;letter-spacing:.6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid2 label{font-size:10px;margin-bottom:3px}
+.profileBlock textarea{min-height:56px;margin-bottom:10px}
+
+#subBuilder{display:flex;flex-direction:column;gap:10px}
+.subBuild{border:1px solid #ddd;border-radius:10px;padding:10px;background:#fafafa}
+.subBuild .sb-head{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.subBuild .sb-head input{flex:1;font-weight:700}
+.subBuild .sb-head button{width:30px;height:30px;border-radius:8px;border:1px solid #ddd;
+  background:#fff;cursor:pointer;color:#c00;font-size:16px;font-weight:700}
+.subBuild .sb-items{display:flex;flex-direction:column;gap:6px}
+.subBuild .sb-row{display:flex;gap:6px}
+.subBuild .sb-row input{flex:1}
+.subBuild .sb-row button{width:26px;height:26px;border-radius:6px;border:1px solid #ddd;
+  background:#fff;cursor:pointer;color:#c00}
+#addSubBtn{border:1.5px dashed #bbb;border-radius:10px;padding:10px;background:#fff;
+  cursor:pointer;color:#666;font-size:14px;width:100%;transition:all .2s}
+#addSubBtn:hover{color:#000;border-color:#000}
+.addItemBtn{border:1px dashed #aaa;border-radius:8px;padding:6px;background:#fff;
+  cursor:pointer;color:#666;font-size:12px;width:100%;margin-top:6px}
+.addItemBtn:hover{color:#000;border-color:#000}
+
+.colorChooser{display:flex;flex-wrap:wrap;gap:8px}
+.csw{border:2px solid #ddd;border-radius:20px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;
+  font-family:inherit;transition:all .15s;background:#fff;color:#000}
+.csw:hover{transform:translateY(-2px)}
+.csw.sel{border-color:#000;box-shadow:0 0 0 2px #000}
+.csw.c-red{background:#ff5d5d;border-color:#ff5d5d;color:#fff}
+.csw.c-green{background:#50c878;border-color:#50c878;color:#fff}
+.csw.c-gray{background:#a8aeb6;border-color:#a8aeb6;color:#fff}
+.csw.c-purple{background:#a878ff;border-color:#a878ff;color:#fff}
+.csw.c-yellow{background:#f0ce4d;border-color:#f0ce4d;color:#000}
+.csw.sel{box-shadow:0 0 0 3px #000}
+
+#photoField label{border:1.5px dashed #bbb;border-radius:10px;padding:16px;text-align:center;
+  cursor:pointer;display:block;transition:all .2s;color:#666;font-size:14px}
+#photoField label:hover{border-color:#000;color:#000}
+#photoField input{display:none}
+#preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+#preview figure{position:relative;margin:0}
+#preview img{width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid #ddd}
+#preview button{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;
+  border:none;background:#c00;color:#fff;cursor:pointer;font-size:12px;line-height:1}
+.actions{display:flex;gap:10px;padding:14px 22px 20px;justify-content:flex-end;
+  border-top:1px solid #eee}
+.actions button{padding:11px 22px;border-radius:8px;font-size:15px;font-weight:700;
+  cursor:pointer;border:1px solid #000;transition:transform .15s,background .2s}
+#cancelBtn{background:#fff;color:#000}
+#cancelBtn:hover{background:#f0f0f0}
+#saveBtn{background:#000;color:#fff}
+#saveBtn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.3)}
+
+@media (max-width:1500px){
+  header{flex-wrap:wrap;gap:8px;padding:10px 14px;position:relative}
+}
+@media (max-width:760px){
+  header{flex-wrap:wrap;gap:8px}
+  #clock{order:1}
+  .logo{font-size:16px}
+  #addBtn{order:3}
+  #zoom{order:3}
+  #resetView{order:4}
+  #linkBtn{order:5}
+  #webToggle{order:6}
+}
+</style>
+</head>
+<body>
+<canvas id="web"></canvas>
+<canvas id="particles"></canvas>
+
+<header>
+  <div class="logo">Хронология<b> / </b><span class="sl">Действия</span></div>
+  <button id="addBtn">＋ Добавить событие</button>
+  <div id="clock">--:--:-- <span class="dz">МСК</span></div>
+  <div id="devBadge">Находится на ранней стадии разработки</div>
+  <div id="zoom">
+    <button id="zIn" title="Приблизить">＋</button>
+    <span class="pct" id="zPct">100%</span>
+    <button id="zOut" title="Отдалить">−</button>
+  </div>
+  <button id="resetView" title="Сбросить вид">Центр</button>
+  <button id="linkBtn" title="Связать события">◎ Связи</button>
+  <button id="webToggle" title="Показать/скрыть паутину">Паутина</button>
+  <button id="webClear" title="Убрать все связи паутины">Очистить паутину</button>
+  <button id="saveFile" title="Сохранить всё в файл">Сохранить</button>
+  <button id="loadFile" title="Загрузить из файла">Загрузить</button>
+  <div class="statusWrap" id="statusWrap">
+    <button id="doneBtn" class="stBtn" title="Работа завершена"><span class="led"></span>Завершено</button>
+    <button id="undoneBtn" class="stBtn" title="Работа не завершена"><span class="led"></span>Не завершено</button>
+  </div>
+  <input type="file" id="importFile" accept=".json,application/json" style="display:none" aria-label="Загрузить файл">
+</header>
+
+<div id="empty">
+  <div class="plus">＋</div>
+  <h2>Хронология пуста</h2>
+  <p>Нажмите «Добавить событие», выберите точное время, месяц и год.<br>
+  События появятся плавающими карточками, связанными общей паутиной.<br>Перетаскивайте их — они двигаются, куда захотите.</p>
+</div>
+
+<div id="hint">✱ добавляйте события · перетаскивайте карточки · клик по паутине-кнопке связывает события
+  <span id="credit">АВТОР РАЗРАБОТКИ: ЛИНКОЛЬН</span></div>
+
+<div id="board"></div>
+
+<div class="modal" id="modal">
+  <div class="box">
+    <h3 id="modalTitle">Новое событие</h3>
+    <div class="selectors" id="selectors"></div>
+    <div id="slotList"></div>
+    <div class="fields">
+      <div id="colorField">
+        <label>Цвет таблицы</label>
+        <div class="colorChooser">
+          <button class="csw c0 sel" data-c="" title="Стандартный">Белый</button>
+          <button class="csw c-red" data-c="red" title="Красный">Красный</button>
+          <button class="csw c-green" data-c="green" title="Зелёный">Зелёный</button>
+          <button class="csw c-gray" data-c="gray" title="Серый">Серый</button>
+          <button class="csw c-purple" data-c="purple" title="Фиолетовый">Фиолетовый</button>
+          <button class="csw c-yellow" data-c="yellow" title="Жёлтый">Жёлтый</button>
+        </div>
+      </div>
+      <div id="titleField">
+        <label>Заголовок / Действие</label>
+        <input type="text" id="inTitle" placeholder="Например: Запуск проекта" aria-label="Заголовок события">
+      </div>
+      <div id="descField">
+        <label>Описание (необязательно)</label>
+        <textarea id="inDesc" placeholder="Детали события…" aria-label="Описание события"></textarea>
+      </div>
+      <div class="profileBlock">
+        <h4>Личные данные</h4>
+        <div class="grid2">
+          <div><label>Номер</label><input type="text" id="inNum" aria-label="Номер"></div>
+          <div><label>Адрес</label><input type="text" id="inAddr" aria-label="Адрес"></div>
+          <div><label>Имя</label><input type="text" id="inFirst" aria-label="Имя"></div>
+          <div><label>Фамилия</label><input type="text" id="inLast" aria-label="Фамилия"></div>
+          <div><label>Отчество</label><input type="text" id="inPatr" aria-label="Отчество"></div>
+          <div><label>Семейное положение</label><input type="text" id="inFam" aria-label="Семейное положение"></div>
+        </div>
+        <label>Привычки</label>
+        <textarea id="inHabits" aria-label="Привычки"></textarea>
+        <label>Определённые черты характера</label>
+        <textarea id="inTraits" aria-label="Черты характера"></textarea>
+        <label>Хобби</label>
+        <textarea id="inHobby" aria-label="Хобби"></textarea>
+        <label>Соц. сети</label>
+        <textarea id="inSocial" aria-label="Соц. сети"></textarea>
+        <label>Учебное заведение</label>
+        <input type="text" id="inSchool" aria-label="Учебное заведение">
+        <label>Работа</label>
+        <input type="text" id="inWork" aria-label="Работа">
+      </div>
+      <div id="notesField">
+        <label>Заметки</label>
+        <textarea id="inNotes" placeholder="Заметки…" aria-label="Заметки"></textarea>
+      </div>
+      <div id="subtablesField">
+        <label>Подтаблицы</label>
+        <div id="subBuilder"></div>
+        <button type="button" id="addSubBtn">＋ Добавить подтаблицу</button>
+      </div>
+      <div id="photoField">
+        <label>＋ Нажмите, чтобы добавить фотографии</label>
+        <input type="file" id="inPhoto" accept="image/*" multiple aria-label="Добавить фотографии">
+        <div id="preview"></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="cancelBtn">Отмена</button>
+      <button id="saveBtn">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="detailModal">
+  <div class="box">
+    <h3 id="detTitle">Детали события</h3>
+    <div class="fields">
+      <div><label>Заголовок</label><input type="text" id="detTitleIn" aria-label="Заголовок"></div>
+      <div><label>Описание</label><textarea id="detDesc" aria-label="Описание"></textarea></div>
+      <div class="profileBlock">
+        <h4>Личные данные</h4>
+        <div class="grid2">
+          <div><label>Номер</label><input type="text" id="detNum" aria-label="Номер"></div>
+          <div><label>Адрес</label><input type="text" id="detAddr" aria-label="Адрес"></div>
+          <div><label>Имя</label><input type="text" id="detFirst" aria-label="Имя"></div>
+          <div><label>Фамилия</label><input type="text" id="detLast" aria-label="Фамилия"></div>
+          <div><label>Отчество</label><input type="text" id="detPatr" aria-label="Отчество"></div>
+          <div><label>Семейное положение</label><input type="text" id="detFam" aria-label="Семейное положение"></div>
+        </div>
+        <label>Соц. сети</label><textarea id="detSocial" aria-label="Соц. сети"></textarea>
+        <label>Привычки</label><textarea id="detHabits" aria-label="Привычки"></textarea>
+        <label>Черты характера</label><textarea id="detTraits" aria-label="Черты характера"></textarea>
+        <label>Хобби</label><textarea id="detHobby" aria-label="Хобби"></textarea>
+        <label>Учебное заведение</label><input type="text" id="detSchool" aria-label="Учебное заведение">
+        <label>Работа</label><input type="text" id="detWork" aria-label="Работа">
+      </div>
+      <div><label>Заметки</label><textarea id="detNotes" aria-label="Заметки"></textarea></div>
+    </div>
+    <div class="actions">
+      <button id="detCancel">Закрыть</button>
+      <button id="detSave">Сохранить изменения</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ helpers ============
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const board = $("#board");
+const world = document.createElement("div");
+world.id = "world";
+board.appendChild(world);
+const empty = $("#empty");
+
+let events = [];
+try{
+  const raw = localStorage.getItem("chrono_events");
+  if(raw) events = JSON.parse(raw);
+}catch(e){}
+let nextId = 1;
+
+// ============ live clock ============
+const clock = $("#clock");
+function tick(){
+  const d = new Date();
+  const p = n => String(n).padStart(2,"0");
+  clock.innerHTML = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}<span class="dz">МСК · ${d.getDate()}.${p(d.getMonth()+1)}.${d.getFullYear()}</span>`;
+}
+tick(); setInterval(tick, 250);
+
+// ============ particles background (rich animated sky) ============
+const pCanvas = $("#particles"), pctx = pCanvas.getContext("2d");
+let particles=[], nebulae=[], PW, PH;
+const STAR_COLORS=[
+  ["255,255,255",.9],  // white hot
+  ["215,225,255",.85], // blue-white
+  ["255,240,200",.8],  // pale yellow
+  ["200,215,255",.8],  // ice blue
+  ["255,225,210",.85]  // warm
+];
+function sizeParts(){
+  PW = pCanvas.width = innerWidth;
+  PH = pCanvas.height = innerHeight;
+}
+sizeParts(); addEventListener("resize", sizeParts);
+(function initParts(){
+  for(let i=0;i<150;i++){
+    const col=STAR_COLORS[(Math.random()*STAR_COLORS.length)|0];
+    const big=Math.random()<.08; // a few larger glowing stars
+    particles.push({
+      x:Math.random()*PW, y:Math.random()*PH,
+      baseR:big? (Math.random()*1.6+2.2) : (Math.random()*1.5+.4),
+      r:0,
+      vx:(Math.random()-.5)*.03, vy:(Math.random()-.5)*.03,
+      tw:Math.random()*Math.PI*2, twSpeed:.004+Math.random()*.02,
+      drift:Math.random()*Math.PI*2,
+      c:col[0], cA:col[1],
+      big
+    });
+  }
+  // soft drifting nebulae blobs
+  for(let i=0;i<5;i++){
+    nebulae.push({
+      x:Math.random()*PW, y:Math.random()*PH,
+      r:150+Math.random()*260,
+      hue:Math.random()*360,
+      vx:(Math.random()-.5)*.06, vy:(Math.random()-.5)*.06,
+      tw:Math.random()*Math.PI*2
+    });
+  }
+})();
+function drawParts(){
+  pctx.clearRect(0,0,PW,PH);
+  const t=Date.now()/1000;
+
+  // 1) soft nebulae glows (radial gradients, very faded)
+  for(const nb of nebulae){
+    nb.tw+=.003;
+    nb.x+=nb.vx+Math.sin(t*.1+nb.tw)*.15;
+    nb.y+=nb.vy+Math.cos(t*.08+nb.tw)*.15;
+    if(nb.x<-nb.r)nb.x=PW+nb.r; if(nb.x>PW+nb.r)nb.x=-nb.r;
+    if(nb.y<-nb.r)nb.y=PH+nb.r; if(nb.y>PH+nb.r)nb.y=-nb.r;
+    const breathe=.5+.5*Math.sin(nb.tw);
+    const g=pctx.createRadialGradient(nb.x,nb.y,0,nb.x,nb.y,nb.r*(.7+.3*breathe));
+    g.addColorStop(0,`hsla(${nb.hue},70%,55%,.09)`);
+    g.addColorStop(.7,`hsla(${nb.hue},60%,50%,.04)`);
+    g.addColorStop(1,`hsla(${nb.hue},60%,50%,0)`);
+    pctx.fillStyle=g;
+    pctx.beginPath(); pctx.arc(nb.x,nb.y,nb.r,0,7); pctx.fill();
+    // soft core
+    const gc=pctx.createRadialGradient(nb.x,nb.y,0,nb.x,nb.y,nb.r*.35);
+    gc.addColorStop(0,`hsla(${(nb.hue+30)%360},80%,65%,.08)`);
+    gc.addColorStop(1,`hsla(${(nb.hue+30)%360},70%,60%,0)`);
+    pctx.fillStyle=gc;
+    pctx.beginPath(); pctx.arc(nb.x,nb.y,nb.r*.35,0,7); pctx.fill();
+  }
+
+  // 2) stars with twinkle and occasional faint connecting lines
+  for(let i=0;i<particles.length;i++){
+    const p=particles[i];
+    p.tw+=p.twSpeed;
+    p.x+=p.vx+Math.sin(t*.2+p.drift)*.03;
+    p.y+=p.vy+Math.cos(t*.18+p.drift)*.03;
+    if(p.x<-20)p.x=PW+20; if(p.x>PW+20)p.x=-20;
+    if(p.y<-20)p.y=PH+20; if(p.y>PH+20)p.y=-20;
+    // breathing radius + twinkle alpha
+    p.r=p.baseR*(.8+.4*Math.sin(p.tw*2));
+    const a=p.cA*(.15+.5*Math.abs(Math.sin(p.tw)));
+    // soft halo for bigger stars
+    if(p.big){
+      const halo=pctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*4);
+      halo.addColorStop(0,`rgba(${p.c},${a*.25})`);
+      halo.addColorStop(1,`rgba(${p.c},0)`);
+      pctx.fillStyle=halo;
+      pctx.beginPath(); pctx.arc(p.x,p.y,p.r*4,0,7); pctx.fill();
+    }
+    pctx.globalAlpha=a;
+    pctx.fillStyle=`rgb(${p.c})`;
+    pctx.beginPath(); pctx.arc(p.x,p.y,p.r,0,7); pctx.fill();
+    // cross sparkle on bright stars
+    if(p.big && Math.sin(p.tw)<.1 && Math.sin(p.tw)>-.12){
+      pctx.globalAlpha=a*.6;
+      pctx.strokeStyle=`rgb(${p.c})`;
+      pctx.lineWidth=1;
+      pctx.beginPath();
+      pctx.moveTo(p.x-p.r*3,p.y); pctx.lineTo(p.x+p.r*3,p.y);
+      pctx.moveTo(p.x,p.y-p.r*3); pctx.lineTo(p.x,p.y+p.r*3);
+      pctx.stroke();
+    }
+  }
+  // faint connection web among nearby stars
+  pctx.globalAlpha=1;
+  for(let i=0;i<particles.length;i++){
+    for(let j=i+1;j<particles.length;j++){
+      const a=particles[i], b=particles[j];
+      const dx=a.x-b.x, dy=a.y-b.y, d=Math.hypot(dx,dy);
+      if(d<110){
+        const al=(1-d/110)*.08;
+        pctx.strokeStyle=`rgba(160,190,255,${al})`;
+        pctx.lineWidth=.6;
+        pctx.beginPath(); pctx.moveTo(a.x,a.y); pctx.lineTo(b.x,b.y); pctx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(drawParts);
+}
+requestAnimationFrame(drawParts);
+
+// ============ web / spider-web connections ============
+const webC = $("#web"), wctx = webC.getContext("2d");
+let WW, WH;
+function sizeWeb(){ WW=webC.width=innerWidth; WH=webC.height=innerHeight; }
+sizeWeb(); addEventListener("resize", sizeWeb);
+
+// toggle auto-web visibility
+const webToggle=$("#webToggle");
+let webVisible=true;
+try{ webVisible = localStorage.getItem("chrono_web")!=="0"; }catch(e){}
+function applyWebVisible(){ document.body.classList.toggle("web-off", !webVisible); webToggle.classList.toggle("on", webVisible); }
+applyWebVisible();
+webToggle.addEventListener("click", ()=>{
+  webVisible=!webVisible;
+  try{ localStorage.setItem("chrono_web", webVisible?"1":"0"); }catch(e){}
+  applyWebVisible();
+});
+
+// manual links: array of [idA, idB]
+let links=[];
+function loadLinks(){
+  try{
+    const raw=localStorage.getItem("chrono_links");
+    if(raw) links=JSON.parse(raw);
+    if(!Array.isArray(links)) links=[];
+  }catch(e){ links=[]; }
+}
+loadLinks();
+function saveLinks(){ try{ localStorage.setItem("chrono_links", JSON.stringify(links)); }catch(e){} }
+function hasLink(a,b){ return links.some(l=> (l[0]===a&&l[1]===b)||(l[0]===b&&l[1]===a)); }
+function addLink(a,b){ if(a!==b && !hasLink(a,b)){ links.push([a,b]); saveLinks(); } }
+function removeLink(a,b){ links=links.filter(l=>!( (l[0]===a&&l[1]===b)||(l[0]===b&&l[1]===a) )); saveLinks(); }
+
+// ============ export / import whole state ============
+const saveBtnFile=$("#saveFile"), loadBtnFile=$("#loadFile"), importFile=$("#importFile");
+saveBtnFile.addEventListener("click", ()=>{
+  const state={version:1, events, links, view:{zoom,panX,panY}, webVisible};
+  const blob=new Blob([JSON.stringify(state)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="chronology-"+new Date().toISOString().slice(0,10)+".json";
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },100);
+});
+loadBtnFile.addEventListener("click", ()=>importFile.click());
+importFile.addEventListener("change", ()=>{
+  const file=importFile.files[0];
+  if(!file) return;
+  const rd=new FileReader();
+  rd.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!Array.isArray(data.events)) throw new Error("bad");
+      events=data.events.map(ept=>ept);
+      links=Array.isArray(data.links)?data.links:[];
+      if(data.view){ zoom=data.view.zoom??1; panX=data.view.panX??0; panY=data.view.panY??0; }
+      if(typeof data.webVisible==="boolean"){ webVisible=data.webVisible; applyWebVisible(); }
+      save(); saveLinks();
+      nextId=events.reduce((m,e)=>Math.max(m,Number(e.id)||0),0)+1;
+      // rebuild board
+      $$("#world .card").forEach(c=>c.remove());
+      events.forEach(renderCard);
+      refreshEmpty(); applyView();
+      modal.classList.remove("open");
+      importFile.value="";
+      flashMsg("Загружено");
+    }catch(e){ alert("Не удалось прочитать файл"); }
+  };
+  rd.readAsText(file);
+});
+function flashMsg(t){
+  const d=document.createElement("div"); d.textContent=t;
+  d.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;color:#fff;padding:14px 28px;border-radius:30px;font-size:16px;font-weight:700;z-index:99;box-shadow:0 10px 40px rgba(0,0,0,.7);opacity:0;transition:opacity .3s";
+  document.body.appendChild(d);
+  requestAnimationFrame(()=>d.style.opacity=1);
+  setTimeout(()=>{ d.style.opacity=0; setTimeout(()=>d.remove(),300); },1400);
+}
+
+function getCards(){
+  const out=[];
+  $$("#world .card").forEach(el=>{
+    const id=parseFloat(el.dataset.id);
+    const r=el.getBoundingClientRect();
+    out.push({id, el, x:r.left+r.width/2, y:r.top+r.height/2});
+  });
+  return out;
+}
+function getAnchors(){
+  const els = $$("#world .card:not(.dragging)");
+  const drag = document.querySelector("#world .card.dragging");
+  const centers = els.map(el=>{
+    const r = el.getBoundingClientRect();
+    return {x:r.left+r.width/2, y:r.top+r.height/2};
+  });
+  if(drag){ const r=drag.getBoundingClientRect(); centers.push({x:r.left+r.width/2,y:r.top+r.height/2}); }
+  return centers;
+}
+
+let time=0;
+// ________ ELASTIC SPRING WEB ________
+// Every connection (auto web AND manual links) has a bead at its middle.
+// Grab any bead and pull it in ANY direction — the line bends elastically (u=along, off=side).
+let webGrab=null;         // {id, x, y} while dragging a bead
+let webLines=[];          // {id, x, y} bead screen positions for hit-testing
+const beadData={};        // per-line {u, off}
+
+// compute bead world screen point from (u, off) for a segment A->B
+function beadPoint(a,b,u,off){
+  const dx=b.x-a.x, dy=b.y-a.y;
+  const len=Math.hypot(dx,dy)||1;
+  const nx=-dy/len, ny=dx/len;
+  return {x:a.x+dx*u+nx*off, y:a.y+dy*u+ny*off};
+}
+// given a dragged bead position, recover (u, off)
+function beadDecompose(a,b,px,py){
+  const dx=b.x-a.x, dy=b.y-a.y;
+  const len=Math.hypot(dx,dy)||1;
+  const nx=-dy/len, ny=dx/len;
+  const u=Math.max(.12,Math.min(.88,((px-a.x)*dx+(py-a.y)*dy)/(len*len)));
+  const off=(px-a.x)*nx+(py-a.y)*ny;
+  return {u, off};
+}
+
+function drawElasticLine(x1,y1,cx,cy,x2,y2,color,w,shadow){
+  wctx.strokeStyle=color;
+  wctx.lineWidth=w;
+  if(shadow){ wctx.shadowColor=shadow; wctx.shadowBlur=12; }
+  wctx.beginPath();
+  wctx.moveTo(x1,y1);
+  wctx.quadraticCurveTo(cx,cy,x2,y2);
+  wctx.stroke();
+  if(shadow){ wctx.shadowBlur=0; wctx.shadowColor='transparent'; }
+}
+function beadPos(a,b,u){
+  return {x:a.x+(b.x-a.x)*u, y:a.y+(b.y-a.y)*u};
+}
+function drawWeb(){
+  time+=.014;
+  wctx.clearRect(0,0,WW,WH);
+  const cards=getCards();
+  const cardById={};
+  cards.forEach(c=>cardById[c.id]=c);
+  const nodes=getAnchors();
+  webLines=[];
+
+  // Unified elastic web: every connection is A--(bead)--B. Auto edges + manual links.
+  // Build edge list: auto proximity (all pairs within MAXDIST) plus manual links.
+  const edges=[];
+  const MAXDIST=2000;
+  for(let i=0;i<nodes.length;i++){
+    for(let j=i+1;j<nodes.length;j++){
+      const d=Math.hypot(nodes[i].x-nodes[j].x,nodes[i].y-nodes[j].y);
+      if(d<MAXDIST && d>10){
+        edges.push({a:nodes[i],b:nodes[j],id:"n"+i+"_"+j,manual:false});
+      }
+    }
+  }
+  links.forEach(link=>{
+    const a=cardById[link[0]], b=cardById[link[1]];
+    if(!a&&!b) return;
+    if(a&&b) edges.push({a,b,id:link[0]+"_"+link[1],manual:true});
+  });
+
+  edges.forEach(edge=>{
+    const a=edge.a, b=edge.b, id=edge.id;
+    // bead state
+    if(!beadData[id]) beadData[id]={u:.5,off:0};
+    let bx,by, active=false;
+    if(webGrab && webGrab.id===id){
+      bx=webGrab.x; by=webGrab.y; active=true;
+    } else {
+      const bp=beadPoint(a,b,beadData[id].u,beadData[id].off);
+      bx=bp.x; by=bp.y;
+    }
+    // draw two springy segments around the bead (elastic sag)
+    const d=Math.hypot(b.x-a.x,b.y-a.y)||1;
+    const color=edge.manual
+      ? `rgba(255,220,120,${.75+.2*Math.sin(time*3+id.length)})`
+      : `rgba(190,205,255,${.7+.15*Math.sin(time*2+id.length)})`;
+    const wig=4*Math.sin(time*1.2+id.length);
+    const W=edge.manual?(active?4.5:3.5):Math.min(5,3+d/120);
+    // underlay glow
+    wctx.strokeStyle=color; wctx.lineWidth=W+5;
+    wctx.shadowColor=edge.manual?"rgba(255,220,120,.8)":"rgba(130,170,255,.8)";
+    wctx.shadowBlur=16;
+    wctx.beginPath();
+    wctx.moveTo(a.x,a.y);
+    wctx.quadraticCurveTo((a.x+bx)/2,(a.y+by)/2+wig,bx,by);
+    wctx.lineTo((bx+b.x)/2,(by+b.y)/2-wig);
+    wctx.lineTo(b.x,b.y);
+    wctx.stroke();
+    wctx.shadowBlur=0; wctx.shadowColor="transparent";
+    // bright core
+    wctx.strokeStyle=edge.manual?`rgba(255,245,200,.95)`:`rgba(255,255,255,.9)`;
+    wctx.lineWidth=W;
+    wctx.beginPath();
+    wctx.moveTo(a.x,a.y);
+    wctx.quadraticCurveTo((a.x+bx)/2,(a.y+by)/2+wig,bx,by);
+    wctx.lineTo((bx+b.x)/2,(by+b.y)/2-wig);
+    wctx.lineTo(b.x,b.y);
+    wctx.stroke();
+    // traveling pulse dot
+    const t=(time*.5+id.length)%1;
+    if(t<.5){
+      const partX=a.x+(bx-a.x)*t*2, partY=a.y+(by-a.y)*t*2;
+      wctx.fillStyle='#fff'; wctx.shadowColor='#fff'; wctx.shadowBlur=8;
+      wctx.beginPath(); wctx.arc(partX,partY,3.5,0,7); wctx.fill();
+    } else {
+      const partX=bx+(b.x-bx)*(t-.5)*2, partY=by+(b.y-by)*(t-.5)*2;
+      wctx.fillStyle='#fff'; wctx.shadowColor='#fff'; wctx.shadowBlur=8;
+      wctx.beginPath(); wctx.arc(partX,partY,3.5,0,7); wctx.fill();
+    }
+    wctx.shadowBlur=0;
+    // draggable handle on EVERY edge midpoint (even auto edges)
+    wctx.fillStyle= active?"#fff":"rgba(255,255,255,.95)";
+    wctx.strokeStyle=edge.manual?"rgba(120,200,255,.9)":"rgba(220,235,255,.6)";
+    wctx.lineWidth=1.5;
+    wctx.beginPath(); wctx.arc(bx,by,5.5,0,7); wctx.fill(); wctx.stroke();
+    webLines.push({id, x:bx, y:by, manual:edge.manual});
+  });
+
+  // bright nodes on cards
+  for(const n of nodes){
+    const g = wctx.createRadialGradient(n.x,n.y,0,n.x,n.y,20);
+    g.addColorStop(0,"rgba(255,255,255,1)"); g.addColorStop(1,"rgba(255,255,255,0)");
+    wctx.fillStyle=g;
+    wctx.beginPath(); wctx.arc(n.x,n.y,16,0,7); wctx.fill();
+    wctx.fillStyle="#fff"; wctx.beginPath(); wctx.arc(n.x,n.y,3,0,7); wctx.fill();
+  }
+  requestAnimationFrame(drawWeb);
+}
+requestAnimationFrame(drawWeb);
+
+// ============ infinite canvas: pan & zoom ============
+let zoom=1, panX=0, panY=0;
+const MIN=0.25, MAX=3;
+const zPct=$("#zPct");
+function applyView(){
+  world.style.transform=`translate(${panX}px,${panY}px) scale(${zoom})`;
+  zPct.textContent=Math.round(zoom*100)+"%";
+  saveView();
+}
+let viewTimer=null;
+function saveView(){
+  clearTimeout(viewTimer);
+  viewTimer=setTimeout(()=>{ try{ localStorage.setItem("chrono_view", JSON.stringify({zoom,panX,panY})); }catch(e){} },300);
+}
+function loadView(){
+  try{
+    const raw=localStorage.getItem("chrono_view");
+    if(raw){ const v=JSON.parse(raw); zoom=v.zoom||zoom; panX=v.panX??panX; panY=v.panY??panY; }
+  }catch(e){}
+}
+function viewX(vx){ return (vx - panX)/zoom; }   // screen->world
+function viewY(vy){ return (vy - panY)/zoom; }
+function screenOfWorld(wx,wy){ return {x:wx*zoom+panX, y:wy*zoom+panY}; }
+function zoomAt(fz, cx, cy){
+  const wx=viewX(cx), wy=viewY(cy);
+  zoom=Math.min(MAX, Math.max(MIN, fz));
+  panX = cx - wx*zoom;
+  panY = cy - wy*zoom;
+  applyView();
+}
+function zoomBy(delta, cx, cy){
+  const nz = zoom * Math.pow(1.15, delta);
+  zoomAt(nz, cx, cy);
+}
+function resetView(){
+  zoom=1;
+  if(events.length){
+    let sx=0, sy=0;
+    events.forEach(e=>{sx+=e.px??e.x; sy+=e.py??e.y;});
+    panX = innerWidth/2 - sx/events.length;
+    panY = innerHeight/2 - sy/events.length;
+  } else { panX=0; panY=0; }
+  applyView();
+}
+$("#zIn").addEventListener("click", e=>{world.classList.add("smooth"); setTimeout(()=>world.classList.remove("smooth"),400); zoomBy(1, innerWidth/2, innerHeight/2);});
+$("#zOut").addEventListener("click", e=>{world.classList.add("smooth"); setTimeout(()=>world.classList.remove("smooth"),400); zoomBy(-1, innerWidth/2, innerHeight/2);});
+$("#resetView").addEventListener("click", ()=>{world.classList.add("smooth"); setTimeout(()=>world.classList.remove("smooth"),500); resetView();});
+
+// ============ header status buttons (Завершено / Не завершено) ============
+let activeStatusId=null; // id of card whose status the header buttons reflect
+const doneBtn=$("#doneBtn"), undoneBtn=$("#undoneBtn");
+function refreshStatusUI(){
+  const e=activeStatusId!==null?events.find(x=>x.id===activeStatusId):null;
+  const done=!!(e&&e.done);
+  doneBtn.classList.toggle("on", done);
+  undoneBtn.classList.toggle("on", !done);
+  doneBtn.querySelector(".led").style.display="";
+  undoneBtn.querySelector(".led").style.display="";
+  if(!e){ doneBtn.classList.remove("on"); undoneBtn.classList.remove("on"); }
+}
+function setActiveStatus(id){
+  activeStatusId=id;
+  refreshStatusUI();
+}
+doneBtn.addEventListener("click", ()=>{
+  if(activeStatusId===null) return;
+  const e=events.find(x=>x.id===activeStatusId);
+  if(e) setCardStatus(e,true);
+});
+undoneBtn.addEventListener("click", ()=>{
+  if(activeStatusId===null) return;
+  const e=events.find(x=>x.id===activeStatusId);
+  if(e) setCardStatus(e,false);
+});
+function setCardStatus(e,done){
+  e.done=done;
+  syncCardStatus(e);
+  save();
+  refreshStatusUI();
+  flashMsg(done?"Отмечено как завершено":"Отмечено как не завершено");
+}
+// status shown ONLY via the small circle on the card head (no card color change)
+function applyCardStatusClass(el,e){
+  el.classList.remove("st-done","st-undone");
+}
+function syncCardStatus(e){
+  const card=document.querySelector('#world .card[data-id="'+e.id+'"]');
+  if(card){
+    applyCardStatusClass(card,e);
+    setCardLed(card,e);
+  }
+}
+function setCardLed(card,e){
+  card.querySelectorAll(".head .statusLamp").forEach(x=>x.remove());
+  if(e.done===undefined) return;
+  const lamp=document.createElement("span");
+  lamp.className="statusLamp "+(e.done?"done":"undone");
+  const head=card.querySelector(".head");
+  head.insertBefore(lamp, head.querySelector(".rm"));
+}
+
+// pan with middle-mouse or drag on empty background; also grab web beads
+let pspanning=false, psx=0, psy=0, ppx=0, ppy=0;
+let beadDown=null, beadDownXY=null;
+function findLinkHandleAt(x,y){
+  let best=null, bestd=1e9;
+  webLines.forEach(l=>{
+    const d=Math.hypot(x-l.x,y-l.y);
+    if(d<bestd){ bestd=d; best=l; }
+  });
+  if(best && bestd<40) return best;
+  return null;
+}
+board.addEventListener("pointerdown", ev=>{
+  if(ev.button===1 || ev.target===board || ev.target===world){
+    if(ev.target.closest(".card")) return;
+    const handle=findLinkHandleAt(ev.clientX,ev.clientY);
+    if(handle){
+      // grab the web bead and pull it
+      ev.preventDefault();
+      webGrab={id:handle.lk, x:ev.clientX, y:ev.clientY};
+      beadDown=handle.lk; beadDownXY={x:ev.clientX,y:ev.clientY};
+      board.classList.add("panning");
+      board.setPointerCapture(ev.pointerId);
+      return;
+    }
+    pspanning=true; psx=ev.clientX; psy=ev.clientY; ppx=panX; ppy=panY;
+    board.classList.add("panning");
+    board.setPointerCapture(ev.pointerId);
+    ev.preventDefault();
+  }
+});
+board.addEventListener("pointermove", ev=>{
+  if(webGrab){
+    // drag bead: recompute u/off relative to its endpoints
+    const isAuto=webGrab.id.charAt(0)==="n";
+    let A,B;
+    if(isAuto){
+      const m=webGrab.id.match(/^n(\d+)_(\d+)$/);
+      const ns=getAnchors();
+      A=ns[+m[1]]; B=ns[+m[2]];
+    } else {
+      const cardById={};
+      getCards().forEach(c=>cardById[c.id]=c);
+      const [ia,ib]=webGrab.id.split("_").map(Number);
+      A=cardById[ia]; B=cardById[ib];
+    }
+    if(A&&B){
+      const dec=beadDecompose(A,B,ev.clientX,ev.clientY);
+      beadData[webGrab.id].u=Math.max(.12,Math.min(.88,dec.u));
+      beadData[webGrab.id].off=dec.off;
+    }
+    webGrab.x=ev.clientX; webGrab.y=ev.clientY;
+    save();
+    return;
+  }
+  if(!pspanning) return;
+  panX=ppx+(ev.clientX-psx);
+  panY=ppy+(ev.clientY-psy);
+  applyView();
+});
+board.addEventListener("pointerup", ev=>{
+  if(beadDown){
+    // click (no movement ~<6px) on a MANUAL bead removes that web thread
+    const moved=Math.hypot(ev.clientX-beadDownXY.x,ev.clientY-beadDownXY.y);
+    if(moved<6 && beadDown && !beadDown.startsWith("n")){
+      const [ia,ib]=beadDown.split("_").map(Number);
+      removeLink(ia,ib);
+      flashMsg("Связь убрана");
+    } else if(moved<6 && beadDown && beadDown.startsWith("n")){
+      // click on an auto-line: nothing destructive
+    } else {
+      save();
+    }
+  }
+  beadDown=null; beadDownXY=null;
+  webGrab=null; endPan();
+});
+board.addEventListener("pointercancel", ()=>{ beadDown=null; webGrab=null; endPan(); });
+function endPan(){ pspanning=false; webGrab=null; board.classList.remove("panning"); }
+
+// wheel zoom centered on cursor
+board.addEventListener("wheel", ev=>{
+  ev.preventDefault();
+  zoomBy(-ev.deltaY>0?1:-1, ev.clientX, ev.clientY);
+}, {passive:false});
+
+// ============ card creation & dragging ============
+const monthsRu=new Array(12).fill(0)
+  .map((_,i)=>["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"][i]);
+const monthsShort=["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
+
+function timeLabel(e){
+  const md = ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"][e.mo-1];
+  let t="";
+  if(e.h!==undefined || e.mi!==undefined || e.sec!==undefined){
+    t = `${String(e.h??0).padStart(2,"0")}:${String(e.mi??0).padStart(2,"0")}:${String(e.sec??0).padStart(2,"0")}`;
+  }
+  return `<div class="dt">${e.y}.${String(e.mo).padStart(2,"0")}.${String(e.d).padStart(2,"0")}${t?' <span class="t">'+t+'</span>':''}</div>`;
+}
+
+function renderCard(e){
+  const el = document.createElement("div");
+  el.className="card";
+  el.dataset.id = e.id;
+  applyCardStatusClass(el, e);
+  if(e.color) el.classList.add("themed","c-"+e.color);
+  const photos = (e.photos||[]).map(src=>`<img src="${src}" alt="фото">`).join("");
+  el.innerHTML = `
+    <span class="glowAccent"></span>
+    <div class="head">
+      <span class="dot"></span>
+      ${timeLabel(e)}
+      <span class="linkport" title="Потяните, чтобы связать"></span>
+      <button class="rm" title="Удалить">✕</button>
+    </div>
+    <div class="colorbar"></div>
+    <div class="tabs">
+      <button class="tab on" data-tab="main">Таблица</button>
+      <button class="tab" data-tab="data">Данные</button>
+      <button class="tab" data-tab="note">Заметки</button>
+    </div>
+    <div class="body">
+      <div class="tabpage main on"></div>
+      <div class="tabpage data"></div>
+      <div class="tabpage note"></div>
+    </div>`;
+  const mainP=el.querySelector(".tabpage.main");
+  const dataP=el.querySelector(".tabpage.data");
+  const noteP=el.querySelector(".tabpage.note");
+  // main page
+  const t=document.createElement("div"); t.className="title";
+  const d=document.createElement("div"); d.className="desc";
+  const ph=document.createElement("div"); ph.className="photos";
+  mainP.append(t,d,ph);
+  t.textContent=e.title;
+  d.textContent=e.desc||"";
+  d.style.display=e.desc?"block":"none";
+  // data page
+  const subBox=document.createElement("div"); subBox.className="subs";
+  dataP.appendChild(subBox);
+  // note page
+  const notesBox=document.createElement("div"); notesBox.className="notes";
+  noteP.appendChild(notesBox);
+  el.querySelector(".title").textContent=e.title;
+  // render inline color swatches
+  const bar=el.querySelector(".colorbar");
+  const wnames=[["","Белый"],["red","Красный"],["green","Зелёный"],["gray","Серый"],["purple","Фиолетовый"],["yellow","Жёлтый"]];
+  wnames.forEach(w=>{
+    const s=document.createElement("span");
+    s.className="swatch "+(w[0]?"c-"+w[0]:"base")+(e.color===w[0]?" sel":"");
+    if(!w[0]) s.style.background="#eee";
+    s.title=w[1];
+    s.addEventListener("click", ev=>{
+      ev.stopPropagation();
+      e.color=w[0]||null;
+      el.classList.toggle("themed", !!e.color);
+      if(e.color) el.classList.add("c-"+e.color); else ["c-red","c-green","c-gray","c-purple","c-yellow"].forEach(c=>el.classList.remove(c));
+      bar.querySelectorAll(".swatch").forEach(x=>x.classList.remove("sel"));
+      s.classList.add("sel");
+      save();
+    });
+    bar.appendChild(s);
+  });
+  if(e.photos && e.photos.length){ ph.innerHTML = photos; }
+  else ph.style.display="none";
+  // profile sub-fields
+  const subRows=[
+    ["Номер",e.num],["Адрес",e.addr],["Имя",e.first],["Фамилия",e.last],
+    ["Отчество",e.patr],["Семейное положение",e.fam],["Привычки",e.habits],
+    ["Черты характера",e.traits],["Хобби",e.hobby],["Соц.сети",e.social],["Учебное заведение",e.school],["Работа",e.work]
+  ];
+  subRows.forEach(function(kv){
+    const k=kv[0], v=kv[1];
+    if(v){ const row=document.createElement("div"); row.className="subrow";
+      const lab=document.createElement("span"); lab.className="k"; lab.textContent=k+": ";
+      row.appendChild(lab); row.appendChild(document.createTextNode(v));
+      subBox.appendChild(row);
+    }
+  });
+  if(e.subs && e.subs.length){ subBox.appendChild(extraTables(e.subs)); }
+  if(e.notes){ notesBox.textContent=e.notes; notesBox.style.display="block"; }
+  else notesBox.style.display="none";
+  if(!e.first&&!e.addr&&!e.num&&!e.last&&!e.patr&&!e.fam&&!e.habits&&!e.traits&&!e.hobby&&!e.social&&!e.school&&!e.work&&!e.subs) dataP.style.display="none";
+  if(e.px===undefined && e.x!==undefined){ e.px=e.x; e.py=e.y; }
+  if(e.px===undefined) e.px = viewX(40) + Math.random()*innerWidth*.5 - 120;
+  if(e.py===undefined) e.py = viewY(70) + Math.random()*innerHeight*.4 - 120;
+  el.style.left = e.px + "px";
+  el.style.top  = e.py + "px";
+  el.querySelector(".rm").addEventListener("click", ev=>{
+    ev.stopPropagation();
+    el.classList.add("dragging");
+    el.style.transition="transform .3s, opacity .3s";
+    el.style.transform="scale(.4)";
+    el.style.opacity="0";
+    setTimeout(()=>{ el.remove(); events=events.filter(x=>x.id!==e.id); links=links.filter(l=>l[0]!==e.id&&l[1]!==e.id); save(); saveLinks(); refreshEmpty(); },300);
+  });
+  makeDraggable(el, e);
+  // tilt the card toward the cursor on hover
+  el.addEventListener("mousemove", function(ev){
+    const r=el.getBoundingClientRect();
+    const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    const dx=ev.clientX-cx, dy=ev.clientY-cy;
+    const maxRot=8, maxShift=8;
+    // normalize to -1..1
+    const nx=Math.max(-1,Math.min(1,dx/(r.width/2)));
+    const ny=Math.max(-1,Math.min(1,dy/(r.height/2)));
+    el.style.setProperty("--ty", (ny*maxShift)+"px");
+    el.style.setProperty("--rot", (-nx*maxRot)+"deg");
+    // slight push toward cursor: shift x a bit in cursor direction offset
+    el.style.setProperty("--tx", (nx*-3)+"px");
+    el.classList.add("hovering");
+  });
+  el.addEventListener("mouseleave", function(){
+    el.classList.remove("hovering");
+    el.style.setProperty("--tx","0px");
+    el.style.setProperty("--ty","0px");
+    el.style.setProperty("--rot","0deg");
+  });
+  // reflect status in the head dot
+  syncCardStatus(e);
+  // click expands the card into fullscreen with animation & selects it for status
+  el.addEventListener("click", ev=>{
+    if(ev.target.closest(".rm")||ev.target.closest(".linkport")||ev.target.closest(".swatch")) return;
+    if(linkMode) return;
+    if(dragMoved) return;
+    setActiveStatus(e.id);
+    const r=el.getBoundingClientRect();
+    openDetail(e.id, {x:r.left, y:r.top, w:r.width, h:r.height});
+  });
+  // double-click opens full details / edit
+  // tab switching within the card
+  el.querySelectorAll(".tab").forEach(bt=>bt.addEventListener("click", ev=>{
+    ev.stopPropagation();
+    el.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+    bt.classList.add("on");
+    const name=bt.dataset.tab;
+    el.querySelectorAll(".tabpage").forEach(p=>p.classList.remove("on"));
+    el.querySelector(".tabpage."+name).classList.add("on");
+  }));
+  world.appendChild(el);
+  return el;
+}
+// render extra user-added sub-tables into a page
+function extraTables(subs){
+  const wrap=document.createElement("div"); wrap.className="extraTables";
+  subs.forEach(sub=>{
+    const card=document.createElement("div"); card.className="extraTable";
+    if(sub.title){ const h=document.createElement("div"); h.className="et-title"; h.textContent=sub.title; card.appendChild(h); }
+    const ul=document.createElement("ul");
+    (sub.items||[]).forEach(it=>{ const li=document.createElement("li"); li.textContent=it; ul.appendChild(li); });
+    card.appendChild(ul);
+    wrap.appendChild(card);
+  });
+  return wrap;
+}
+
+// ============ manual link mode ============
+let linkMode=false, linkFrom=null, hoverLinkInWorld=null, dragMoved=false;
+const linkBtn=$("#linkBtn");
+const linkTip=document.createElement("div");
+linkTip.id="linkTip";
+document.body.appendChild(linkTip);
+linkBtn.addEventListener("click", ()=>{
+  linkMode=!linkMode;
+  linkBtn.classList.toggle("on", linkMode);
+  board.classList.toggle("linkmode", linkMode);
+  $$("#world .card").forEach(c=>c.classList.remove("pick"));
+  linkFrom=null;
+  if(linkMode) linkTip.textContent="Кликните первую карточку";
+  else linkTip.classList.remove("show");
+});
+function setTip(t){ if(linkMode){ linkTip.textContent=t; linkTip.classList.add("show"); } }
+function exitLink(){ linkMode=false; linkBtn.classList.remove("on"); board.classList.remove("linkmode"); linkFrom=null; linkTip.classList.remove("show"); }
+
+// ---- clear all web threads ----
+const webClearBtn=$("#webClear");
+webClearBtn.addEventListener("click", ()=>{
+  links=[];
+  saveLinks();
+  flashMsg("Паутина убрана");
+});
+
+// ---- drag-a-web-thread between cards, using an overlay canvas line ----
+let linkLine=null;
+function startLinkDrag(from){
+  removeLinkLine();
+  linkLine=document.createElement("canvas");
+  linkLine.width=innerWidth; linkLine.height=innerHeight;
+  linkLine.style.cssText="position:fixed;inset:0;z-index:55;pointer-events:none";
+  document.body.appendChild(linkLine);
+  linkLine._from=from;
+}
+function linkLineCtx(){ return linkLine?linkLine.getContext("2d"):null; }
+function moveLinkDrag(x,y){
+  if(!linkLine) return;
+  const c=linkLineCtx();
+  c.clearRect(0,0,linkLine.width,linkLine.height);
+  const f=linkLine._from;
+  c.strokeStyle="rgba(255,255,150,.8)";
+  c.lineWidth=3; c.shadowColor="rgba(255,255,120,.9)"; c.shadowBlur=12;
+  c.setLineDash([8,8]); c.lineDashOffset=-(performance.now()/30%16);
+  c.beginPath(); c.moveTo(f.x,f.y); c.lineTo(x,y); c.stroke();
+  c.setLineDash([]);
+  c.fillStyle="#fff"; c.beginPath(); c.arc(x,y,4,0,7); c.fill();
+}
+function removeLinkLine(){ if(linkLine){ linkLine.remove(); linkLine=null; } }
+function endLinkDrag(x,y,srcEl,srcData){
+  removeLinkLine();
+  // find the card under the cursor
+  const over=document.elementFromPoint(x,y);
+  const targetCard=over?over.closest(".card"):null;
+  if(targetCard && targetCard!==srcEl){
+    const tid=parseFloat(targetCard.dataset.id), sid=srcData.id;
+    if(hasLink(sid,tid)) removeLink(sid,tid); else addLink(sid,tid);
+  }
+}
+
+function makeDraggable(el, data){
+  let sx,sy,ox,oy,drag=false, moved=false;
+  const port=el.querySelector(".linkport");
+  let linkDrag=false, lstart={x:0,y:0};
+  // drag from the link port: pull a web thread to another card
+  port.addEventListener("pointerdown", ev=>{
+    ev.stopPropagation(); ev.preventDefault();
+    const r=el.getBoundingClientRect();
+    lstart={x:r.left+r.width/2,y:r.top+r.height/2};
+    linkDrag=true;
+    port.setPointerCapture(ev.pointerId);
+    startLinkDrag(lstart);
+  });
+  port.addEventListener("pointermove", ev=>{
+    if(!linkDrag) return;
+    moveLinkDrag(ev.clientX,ev.clientY);
+  });
+  port.addEventListener("pointerup", ev=>{
+    if(!linkDrag) return;
+    linkDrag=false; endLinkDrag(ev.clientX,ev.clientY,el,data);
+  });
+  port.addEventListener("pointercancel", ()=>{ linkDrag=false; removeLinkLine(); });
+
+  el.addEventListener("pointerdown", ev=>{
+    if(ev.target.closest(".rm")||ev.target.closest(".linkport")) return;
+    ev.stopPropagation();
+    if(linkMode){
+      ev.preventDefault();
+      return;
+    }
+    drag=true; moved=false; sx=ev.clientX; sy=ev.clientY;
+    ox=parseFloat(el.style.left); oy=parseFloat(el.style.top);
+    el.classList.add("dragging");
+    el.setPointerCapture(ev.pointerId);
+  });
+  el.addEventListener("pointermove", ev=>{
+    if(!linkMode){
+      if(!drag) return;
+      const dx=(ev.clientX-sx)/zoom, dy=(ev.clientY-sy)/zoom;
+      if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>3) moved=true, dragMoved=true;
+      el.style.left=(ox+dx)+"px";
+      el.style.top=(oy+dy)+"px";
+    }
+  });
+  el.addEventListener("pointerup", ev=>{
+    if(linkMode) return; // handled by click
+    if(!drag) return;
+    drag=false; el.classList.remove("dragging");
+    data.px=parseFloat(el.style.left); data.py=parseFloat(el.style.top);
+    save();
+    setTimeout(()=>{ dragMoved=false; },0);
+  });
+  el.addEventListener("pointercancel", ()=>el.classList.remove("dragging"));
+  // manual link selection happens on click (fires for real user clicks reliably)
+  el.addEventListener("click", ev=>{
+    if(!linkMode) return;
+    ev.stopPropagation();
+    const id=parseFloat(el.dataset.id);
+    if(!linkFrom){
+      linkFrom=id;
+      $$("#world .card").forEach(c=>c.classList.remove("pick"));
+      el.classList.add("pick");
+      setTip((data.title||"Событие")+": теперь выберите вторую карточку");
+    } else {
+      if(linkFrom===id){
+        linkFrom=null; $$("#world .card").forEach(c=>c.classList.remove("pick"));
+        setTip("Кликните первую карточку"); return;
+      }
+      if(hasLink(linkFrom,id)){
+        removeLink(linkFrom,id);
+        setTip("Связь удалена. Кликните первую карточку");
+      } else {
+        addLink(linkFrom,id);
+        setTip("Связь добавлена. Кликните первую карточку");
+      }
+      linkFrom=null;
+      $$("#world .card").forEach(c=>c.classList.remove("pick"));
+    }
+  });
+}
+// clicking empty space cancels the pending first pick
+board.addEventListener("pointerdown", ev=>{
+  if(!linkMode) return;
+  if(ev.target===board || ev.target===world){
+    if(linkFrom){
+      linkFrom=null;
+      $$("#world .card").forEach(c=>c.classList.remove("pick"));
+      setTip("Кликните первую карточку");
+    }
+  }
+});
+
+function save(){
+  try{ localStorage.setItem("chrono_events", JSON.stringify(events)); }catch(e){}
+}
+function refreshEmpty(){ empty.style.display = events.length? "none":"flex"; }
+
+// ============ modal date/time selector with animated list ============
+const modal = $("#modal"), slotList = $("#slotList");
+let selField=null, pending={};
+const FIELDS = [
+  {k:"y",  kind:"Год",  list:(st)=>years(st)},
+  {k:"mo", kind:"Месяц",list:(st)=>monthsList()},
+  {k:"d",  kind:"День", list:(st)=>days(st)},
+  {k:"h",  kind:"Часы", list:()=>range(0,23,"ч")},
+  {k:"mi", kind:"Минуты",list:()=>range(0,59,"мин")},
+  {k:"sec",kind:"Секунды",list:()=>range(0,59,"с")},
+];
+function years(s){ const y=[]; for(let i=s.y; i>=s.y-120; i--) y.push(i); return y; }
+function monthsList(){ const [a,b]="Октябрь,Ноябрь,Декабрь,".split(","); return monthsRu.map((m,i)=>({v:i+1,label:`${m}`})); }
+function days(s){
+  const dim=new Date(s.y, s.mo, 0).getDate();
+  return range(1,dim,"число");
+}
+function range(a,b,suf){ const arr=[]; for(let i=b;i>=a;i--) arr.push({v:i,label:`${i} ${suf}`}); return arr; }
+
+function currentSel(){ return FIELDS[selField]; }
+
+function openModal(){
+  const n=new Date();
+  pending = {y:n.getFullYear(), mo:n.getMonth()+1, d:n.getDate(), h:n.getHours(), mi:n.getMinutes(), sec:0, title:"", desc:"", color:"", photos:[]};
+  selField=0;
+  $$(".colorChooser .csw").forEach(b=>b.classList.toggle("sel", b.dataset.c===""));
+  subBuilder.innerHTML=""; subBuilders.length=0;
+  addSubBuild();
+  buildSelectors();
+  renderList();
+  modal.classList.add("open");
+}
+function buildSelectors(){
+  const wrap = $("#selectors"); wrap.innerHTML="";
+  FIELDS.forEach((f,i)=>{
+    const slot=document.createElement("div");
+    slot.className="slot"+(i===selField?" active":"");
+    slot.innerHTML=`<div class="kind">${f.kind}</div><div class="num">${pad(pending[f.k])}</div><div class="sub">${sub(i)}</div>`;
+    slot.addEventListener("click", ()=>{ selField=i; buildSelectors(); renderList(); pulseSlot(slot); });
+    wrap.appendChild(slot);
+  });
+  function sub(i){
+    if(i===0) return "год";
+    if(i===1) return monthsShort[pending.mo-1];
+    if(i===2) return "число";
+    if(i===3) return "часы";
+    if(i===4) return "мин";
+    return "сек";
+  }
+}
+function pad(v){ return String(v).padStart(2,"0"); }
+function pulseSlot(el){ el.animate([{transform:"scale(1.08)"},{transform:"scale(1)"}],{duration:220,easing:"ease-out"}); }
+
+function renderList(){
+  slotList.innerHTML="";
+  const f = currentSel();
+  let items = f.list(pending);
+  if(f.k==="mo") items = monthsRu.map((m,i)=>({v:i+1,label:m}));
+  items.forEach(it=>{
+    const b=document.createElement("button");
+    const val = typeof it==="number"? it : it.v;
+    const label = typeof it==="number"? it : (it.label||val);
+    b.textContent = label + (f.k==="y"?" год":f.k==="d"?" число":"");
+    b.dataset.v = val;
+    if(val===pending[f.k]) b.style.background="#000", b.style.color="#fff";
+    b.addEventListener("click", ()=>{
+      pending[f.k]=val;
+      // if changed year/month, re-derive day limit and clamp
+      if(f.k==="mo"||f.k==="y"){
+        if(pending.y && pending.mo){
+          const dim=new Date(pending.y,pending.mo,0).getDate();
+          pending.d=Math.min(pending.d,dim);
+        }
+      }
+      buildSelectors(); renderList();
+    });
+    slotList.appendChild(b);
+  });
+}
+
+$("#addBtn").addEventListener("click", openModal);
+$("#cancelBtn").addEventListener("click", ()=>modal.classList.remove("open"));
+modal.addEventListener("click", e=>{ if(e.target===modal) modal.classList.remove("open"); });
+
+// photos
+const photoInput=$("#inPhoto"), previewBox=$("#preview");
+photoInput.addEventListener("change", ()=>{
+  Array.from(photoInput.files).forEach(file=>{
+    const rd=new FileReader();
+    rd.onload=ev=>{
+      pending.photos.push(ev.target.result);
+      addPreviewThumb(ev.target.result);
+    };
+    rd.readAsDataURL(file);
+  });
+});
+function addPreviewThumb(src){
+  const fig=document.createElement("figure");
+  const img=document.createElement("img"); img.src=src;
+  const rm=document.createElement("button"); rm.textContent="✕";
+  rm.addEventListener("click", ()=>{ fig.remove(); pending.photos=pending.photos.filter(x=>x!==src); });
+  fig.append(img,rm); previewBox.appendChild(fig);
+}
+$("#inTitle").addEventListener("input", e=>pending.title=e.target.value);
+$("#inDesc").addEventListener("input", e=>pending.desc=e.target.value);
+
+// ---- sub-table builder ----
+const subBuilder=$("#subBuilder");
+const subBuilders=[]; // each: {titleEl, rows:[]}
+function addSubBuild(){
+  const wrap=document.createElement("div");
+  wrap.className="subBuild";
+  const head=document.createElement("div"); head.className="sb-head";
+  const t=document.createElement("input"); t.type="text"; t.placeholder="Название таблицы"; t.setAttribute("aria-label","Название подтаблицы");
+  const del=document.createElement("button"); del.textContent="✕"; del.title="Удалить подтаблицу";
+  head.append(t,del);
+  const items=document.createElement("div"); items.className="sb-items";
+  const rec={titleEl:t, rows:[]};
+  function addRow(val){
+    const row=document.createElement("div"); row.className="sb-row";
+    const inp=document.createElement("input"); inp.type="text"; inp.placeholder="Пункт"; inp.value=val||""; inp.setAttribute("aria-label","Пункт таблицы");
+    const x=document.createElement("button"); x.textContent="✕";
+    x.addEventListener("click",()=>{ row.remove(); rec.rows=rec.rows.filter(r=>r!==inp); });
+    row.append(inp,x); items.appendChild(row);
+    rec.rows.push(inp);
+  }
+  del.addEventListener("click",()=>{ wrap.remove(); const i=subBuilders.indexOf(rec); if(i>-1)subBuilders.splice(i,1); });
+  wrap.append(head,items);
+  const addItemBtn=document.createElement("button"); addItemBtn.type="button"; addItemBtn.className="addItemBtn"; addItemBtn.textContent="＋ пункт";
+  addItemBtn.addEventListener("click",()=>addRow());
+  wrap.appendChild(addItemBtn);
+  subBuilder.appendChild(wrap);
+  subBuilders.push(rec);
+  addRow(); addRow();
+}
+$("#addSubBtn").addEventListener("click", addSubBuild);
+
+$$(".colorChooser .csw").forEach(b=>b.addEventListener("click", ()=>{
+  pending.color=b.dataset.c||"";
+  $$(".colorChooser .csw").forEach(x=>x.classList.toggle("sel", x===b));
+}));
+$("#saveBtn").addEventListener("click", ()=>{
+  pending.title = $("#inTitle").value.trim() || "Без названия";
+  pending.desc = $("#inDesc").value.trim();
+  pending.num   = $("#inNum").value.trim();
+  pending.addr  = $("#inAddr").value.trim();
+  pending.first = $("#inFirst").value.trim();
+  pending.last  = $("#inLast").value.trim();
+  pending.patr  = $("#inPatr").value.trim();
+  pending.fam   = $("#inFam").value.trim();
+  pending.habits= $("#inHabits").value.trim();
+  pending.traits= $("#inTraits").value.trim();
+  pending.hobby = $("#inHobby").value.trim();
+  pending.social= $("#inSocial").value.trim();
+  pending.school= $("#inSchool").value.trim();
+  pending.work  = $("#inWork").value.trim();
+  pending.notes = $("#inNotes").value.trim();
+  // collect sub-tables
+  pending.subs = subBuilders.map(r=>({
+    title:r.titleEl.value.trim(),
+    items:r.rows.map(inp=>inp.value.trim()).filter(Boolean)
+  })).filter(s=>s.title || s.items.length);
+  const ev = {...pending, id:nextId++, title:pending.title, desc:pending.desc,
+    px:viewX(40)+Math.random()*Math.max(innerWidth-300,10),
+    py:viewY(70)+Math.random()*Math.max(innerHeight-300,10)};
+  events.push(ev); save();
+  renderCard(ev); refreshEmpty();
+  modal.classList.remove("open");
+  resetModal();
+});
+
+function resetModal(){
+  $("#inTitle").value=""; $("#inDesc").value=""; previewBox.innerHTML=""; photoInput.value="";
+  ["#inNum","#inAddr","#inFirst","#inLast","#inPatr","#inFam","#inHabits","#inTraits","#inHobby","#inSocial","#inSchool","#inWork","#inNotes"].forEach(s=>{$(s).value="";});
+  $$(".colorChooser .csw").forEach(b=>b.classList.toggle("sel", b.dataset.c===""));
+  subBuilder.innerHTML=""; subBuilders.length=0;
+  addSubBuild();
+}
+
+// ---- detail / edit viewer opened by clicking a card ----
+const detailModal=$("#detailModal");
+let detailId=null;
+function openDetail(id, origin){
+  const e=events.find(x=>x.id===id);
+  if(!e) return;
+  detailId=id;
+  $("#detTitle").textContent="Детали события";
+  $("#detTitleIn").value=e.title||"";
+  $("#detDesc").value=e.desc||"";
+  $("#detNum").value=e.num||"";
+  $("#detAddr").value=e.addr||"";
+  $("#detFirst").value=e.first||"";
+  $("#detLast").value=e.last||"";
+  $("#detPatr").value=e.patr||"";
+  $("#detFam").value=e.fam||"";
+  $("#detSocial").value=e.social||"";
+  $("#detHabits").value=e.habits||"";
+  $("#detTraits").value=e.traits||"";
+  $("#detHobby").value=e.hobby||"";
+  $("#detSchool").value=e.school||"";
+  $("#detWork").value=e.work||"";
+  $("#detNotes").value=e.notes||"";
+  // prepare unfocused expansion start point
+  detailModal.classList.remove("open","collapsing");
+  detailModal.classList.add("expanding");
+  const box=detailModal.querySelector(".box");
+  if(origin){
+    // origin is top-left of the card; modal centers a 560px box — we approximate
+    const rw=Math.min(560,innerWidth*.92);
+    const startX=-(innerWidth/2-rw/2)+(origin.x-origin.w/2);
+    const startY=-(innerHeight/2)+(origin.y-origin.h/2);
+    box.style.setProperty("--sx", startX+"px");
+    box.style.setProperty("--sy", startY+"px");
+  }
+  forceReflow(detailModal);
+  detailModal.classList.remove("expanding");
+  detailModal.classList.add("open");
+}
+function forceReflow(el){ void el.offsetWidth; }
+$("#detCancel").addEventListener("click", ()=>detailModal.classList.remove("open"));
+detailModal.addEventListener("click", ev=>{ if(ev.target===detailModal) detailModal.classList.remove("open"); });
+$("#detSave").addEventListener("click", ()=>{
+  const e=events.find(x=>x.id===detailId);
+  if(!e) return;
+  e.title=$("#detTitleIn").value.trim()||"Без названия";
+  e.desc=$("#detDesc").value.trim();
+  e.num=$("#detNum").value.trim(); e.addr=$("#detAddr").value.trim();
+  e.first=$("#detFirst").value.trim(); e.last=$("#detLast").value.trim(); e.patr=$("#detPatr").value.trim();
+  e.fam=$("#detFam").value.trim(); e.social=$("#detSocial").value.trim();
+  e.habits=$("#detHabits").value.trim(); e.traits=$("#detTraits").value.trim();
+  e.hobby=$("#detHobby").value.trim(); e.school=$("#detSchool").value.trim();
+  e.work=$("#detWork").value.trim(); e.notes=$("#detNotes").value.trim();
+  save();
+  // re-render this card
+  const card=document.querySelector('#world .card[data-id="'+e.id+'"]');
+  if(card) card.remove();
+  renderCard(e);
+  detailModal.classList.remove("open");
+  flashMsg("Сохранено");
+});
+
+// clicking a card opens its details on double-click
+// (wired per-card inside renderCard)
+
+// Esc closes any open modal
+addEventListener("keydown", e=>{ if(e.key==="Escape"){ modal.classList.remove("open"); detailModal.classList.remove("open"); } });
+
+// ============ init ============
+loadView();
+events.forEach(renderCard);
+refreshEmpty();
+applyView();
+</script>
+</body>
+</html>
