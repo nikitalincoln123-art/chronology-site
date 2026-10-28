@@ -155,8 +155,22 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
   cursor:crosshair;flex:none;position:relative;transition:background .2s,border-color .2s,box-shadow .2s}
 .card .linkport:hover{background:#ffd;border-color:#000;box-shadow:0 0 10px rgba(255,255,150,.8)}
 .card .body{padding:12px}
-.card .title{font-size:15px;font-weight:800;margin-bottom:6px;line-height:1.25}
-.card .desc{font-size:13px;color:#333;white-space:pre-wrap;line-height:1.45;margin-bottom:8px}
+.card .title{font-size:15px;font-weight:800;margin-bottom:6px;line-height:1.25;outline:none}
+.card .desc{font-size:13px;color:#333;white-space:pre-wrap;line-height:1.45;margin-bottom:8px;outline:none}
+.card .title[contenteditable="true"]:focus,.card .desc[contenteditable="true"]:focus{
+  box-shadow:0 0 0 2px rgba(0,220,255,.5);border-radius:6px}
+.card .emptyhint{color:#aaa;font-style:italic}
+.card .addrow{display:flex;align-items:center;gap:8px;margin-top:6px}
+.card .addrow input{flex:1;border:1px dashed rgba(0,0,0,.25);border-radius:8px;padding:7px 10px;
+  font-size:13px;font-family:inherit;background:rgba(255,255,255,.55);outline:none;transition:border .2s}
+.card .addrow input:focus{border-color:#0aa5c9}
+.card .addrow button{border:none;background:#0aa5c9;color:#fff;border-radius:8px;width:30px;height:30px;
+  cursor:pointer;font-size:16px;line-height:1}
+.card .kvrow{display:flex;align-items:center;gap:6px;margin-top:4px}
+.card .kvrow input{flex:1;border:1px solid rgba(0,0,0,.15);border-radius:6px;padding:5px 8px;font-size:12px;
+  font-family:inherit;background:rgba(255,255,255,.6);outline:none}
+.card .kvrow input:focus{border-color:#0aa5c9}
+.card .kvrow button{border:none;background:transparent;color:#c00;cursor:pointer;font-size:15px}
 .card .photos{display:flex;flex-wrap:wrap;gap:6px}
 .card .photos img{width:100%;height:120px;object-fit:cover;border-radius:4px;
   background:#ddd;display:block}
@@ -1153,14 +1167,33 @@ function renderCard(e){
   const mainP=el.querySelector(".tabpage.main");
   const dataP=el.querySelector(".tabpage.data");
   const noteP=el.querySelector(".tabpage.note");
-  // main page
-  const t=document.createElement("div"); t.className="title";
-  const d=document.createElement("div"); d.className="desc";
+  // main page — instant-edit table
+  const t=document.createElement("div"); t.className="title"; t.contentEditable="true"; t.spellcheck=false;
+  const d=document.createElement("div"); d.className="desc"; d.contentEditable="true"; d.spellcheck=false;
   const ph=document.createElement("div"); ph.className="photos";
-  mainP.append(t,d,ph);
-  t.textContent=e.title;
+  const kvWrap=document.createElement("div"); kvWrap.className="kvlist";
+  const addRow=document.createElement("div"); addRow.className="addrow";
+  const addInp=document.createElement("input"); addInp.type="text"; addInp.placeholder="＋ Впишите сюда новый пункт…"; addInp.setAttribute("aria-label","Новый пункт");
+  const addBtn2=document.createElement("button"); addBtn2.textContent="＋";
+  addRow.append(addInp,addBtn2);
+  mainP.append(t,d,ph,kvWrap,addRow);
+  t.textContent=e.title||"Заголовок…";
   d.textContent=e.desc||"";
   d.style.display=e.desc?"block":"none";
+  let saveTimer=null;
+  function autosave(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ e.title=t.innerText.trim()||""; e.desc=d.innerText.trim()||""; save(); },400); }
+  t.addEventListener("input",autosave);
+  d.addEventListener("input",autosave);
+  // render existing key-value entries
+  (e.rows||[]).forEach(r=>addKvRow(kvWrap,e,r));
+  addBtn2.addEventListener("click",()=>{
+    const v=addInp.value.trim(); if(!v) return;
+    e.rows=(e.rows||[]);
+    e.rows.push({k:"",v});
+    addInp.value=""; save();
+    addKvRow(kvWrap,e,e.rows[e.rows.length-1]);
+  });
+  addInp.addEventListener("keydown",ev=>{ if(ev.key==="Enter"){ ev.preventDefault(); addBtn2.click(); }});
   // data page
   const subBox=document.createElement("div"); subBox.className="subs";
   dataP.appendChild(subBox);
@@ -1255,14 +1288,14 @@ function renderCard(e){
   });
   // reflect status in the head dot
   syncCardStatus(e);
-  // click expands the card into fullscreen with animation & selects it for status
+  // click focuses the quick-edit fields right on the card
   el.addEventListener("click", ev=>{
     if(ev.target.closest(".rm")||ev.target.closest(".linkport")||ev.target.closest(".swatch")) return;
     if(linkMode) return;
     if(dragMoved) return;
     setActiveStatus(e.id);
-    const r=el.getBoundingClientRect();
-    openDetail(e.id, {x:r.left, y:r.top, w:r.width, h:r.height});
+    const tt=el.querySelector(".title");
+    if(tt){ tt.focus(); }
   });
   // double-click opens full details / edit
   // tab switching within the card
@@ -1277,6 +1310,19 @@ function renderCard(e){
   world.appendChild(el);
   return el;
 }
+// fast key/value row under a card
+function addKvRow(wrap,e,row){
+  const line=document.createElement("div"); line.className="kvrow";
+  const k=document.createElement("input"); k.type="text"; k.placeholder="ключ"; k.value=row.k||"";
+  const v=document.createElement("input"); v.type="text"; k.setAttribute("aria-label","ключ"); v.setAttribute("aria-label","значение"); v.placeholder="значение"; v.value=row.v||"";
+  const del=document.createElement("button"); del.textContent="✕"; del.title="Удалить пункт";
+  let t2=null;
+  function sv(){ clearTimeout(t2); t2=setTimeout(()=>{ row.k=k.value.trim(); row.v=v.value.trim(); save(); },400); }
+  k.addEventListener("input",sv); v.addEventListener("input",sv);
+  del.addEventListener("click",()=>{ line.remove(); e.rows=(e.rows||[]).filter(x=>x!==row); save(); });
+  line.append(k,v,del); wrap.appendChild(line);
+}
+
 // render extra user-added sub-tables into a page
 function extraTables(subs){
   const wrap=document.createElement("div"); wrap.className="extraTables";
