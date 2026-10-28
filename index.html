@@ -63,7 +63,25 @@ section{position:relative;z-index:1}
 .feature{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;
   padding:26px;transition:transform .25s,background .3s,box-shadow .3s}
 .feature:hover{transform:translateY(-6px);background:rgba(255,255,255,.08);box-shadow:0 16px 40px rgba(0,0,0,.4)}
-.feature .em{font-size:28px;margin-bottom:12px}
+.feature .em{width:46px;height:46px;margin-bottom:14px;position:relative}
+.feature .em i{position:absolute;inset:0;border-radius:12px;display:block;
+  box-shadow:0 0 18px rgba(140,180,255,.4)}
+.feature .em i::after{content:"";position:absolute;top:50%;left:50%;width:14px;height:14px;border-radius:50%;
+  transform:translate(-50%,-50%);background:#fff;box-shadow:0 0 14px rgba(255,255,255,.9)}
+/* animated geometric objects per feature */
+.feature .em--docs i{background:linear-gradient(135deg,#5b8cff,#8a5bff);animation:floaty 3s ease-in-out infinite}
+.feature .em--web i{border-radius:50%;background:radial-gradient(circle at 30% 30%,#7fd0ff,#3f6bff);animation:spin 6s linear infinite}
+.feature .em--web i::after{width:0;height:0;border:8px solid transparent;border-top-color:#fff;border-radius:0}
+.feature .em--colors i{background:conic-gradient(#ff5f6d,#f6c445,#50c878,#5bb8ff,#b06eff,#ff5f6d);animation:spin 8s linear infinite}
+.feature .em--colors i::after{background:#050505;width:20px;height:20px}
+.feature .em--notes i{border-radius:4px;background:linear-gradient(135deg,#42e695,#3bb2b8);animation:floaty 3.4s ease-in-out infinite}
+.feature .em--canvas i{border:3px solid #8ad3ff;background:transparent;animation:pulse 2.6s ease-in-out infinite}
+.feature .em--canvas i::after{border:2px solid #fff;background:transparent;width:10px;height:10px}
+.feature .em--save i{background:linear-gradient(135deg,#56ccf2,#8a5bff);animation:floaty 3.2s ease-in-out infinite}
+.feature .em--save i::after{border-radius:3px;width:12px;height:10px;border:2px solid #fff;box-shadow:none}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.86);opacity:.7}}
 .feature h3{font-size:17px;font-weight:700;margin-bottom:8px}
 .feature p{font-size:14px;line-height:1.55;color:rgba(255,255,255,.7)}
 
@@ -94,12 +112,12 @@ footer .dev{margin-top:8px;font-size:11px;letter-spacing:1px;text-transform:uppe
 <section class="features" id="features">
   <h2>Что умеет</h2>
   <div class="grid">
-    <div class="feature"><div class="em">🗂</div><h3>События и досье</h3><p>Карточки с датой, описанием, фото и полным набором данных: номер, адрес, ФИО, привычки, хобби, работа и многое другое.</p></div>
-    <div class="feature"><div class="em">🕸</div><h3>Живая паутина</h3><p>Эластичные светящиеся связи между карточками: тяните ручки, изгибайте нити и соединяйте события так, как нужно вам.</p></div>
-    <div class="feature"><div class="em">🎨</div><h3>Цвета и статусы</h3><p>Окрашивайте карточки в разные цвета, отмечайте работы завершёнными или нет — всё визуально и наглядно.</p></div>
-    <div class="feature"><div class="em">📝</div><h3>Заметки и подтаблицы</h3><p>Добавляйте заметки и собственные подтаблицы к любому событию, редактируйте их в удобном полноэкранном окне.</p></div>
-    <div class="feature"><div class="em">🧲</div><h3>Бесконечный холст</h3><p>Панорамируйте и масштабируйте доску — карточки можно размещать где угодно, ничего не влезает в один экран.</p></div>
-    <div class="feature"><div class="em">💾</div><h3>Сохранение</h3><p>Скачивайте и загружайте полный архив со всеми событиями, связями и положением элементов.</p></div>
+    <div class="feature"><div class="em em--docs"><i></i></div><h3>События и досье</h3><p>Карточки с датой, описанием, фото и полным набором данных: номер, адрес, ФИО, привычки, хобби, работа и многое другое.</p></div>
+    <div class="feature"><div class="em em--web"><i></i></div><h3>Живая паутина</h3><p>Эластичные светящиеся связи между карточками: тяните ручки, изгибайте нити и соединяйте события так, как нужно вам.</p></div>
+    <div class="feature"><div class="em em--colors"><i></i></div><h3>Цвета и статусы</h3><p>Окрашивайте карточки в разные цвета, отмечайте работы завершёнными или нет — всё визуально и наглядно.</p></div>
+    <div class="feature"><div class="em em--notes"><i></i></div><h3>Заметки и подтаблицы</h3><p>Добавляйте заметки и собственные подтаблицы к любому событию, редактируйте их в удобном полноэкранном окне.</p></div>
+    <div class="feature"><div class="em em--canvas"><i></i></div><h3>Бесконечный холст</h3><p>Панорамируйте и масштабируйте доску — карточки можно размещать где угодно, ничего не влезает в один экран.</p></div>
+    <div class="feature"><div class="em em--save"><i></i></div><h3>Сохранение</h3><p>Скачивайте и загружайте полный архив со всеми событиями, связями и положением элементов.</p></div>
   </div>
 </section>
 
