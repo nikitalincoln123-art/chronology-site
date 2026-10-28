@@ -3,1862 +3,202 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Хронология / Действия</title>
+<title>Интеллект-карта</title>
 <link rel="icon" type="image/jpeg" href="icon.jpg">
-<meta name="description" content="Интерактивная доска для построения хронологии событий, карточек-досье и связей-паутины.">
-<meta name="yandex-verification" content="chronology-site">
+<meta name="description" content="Интерактивная интеллект-карта: темы, ветви и узлы, которые можно создавать, переименовывать, перетаскивать и сохранять.">
 <style>
-:root{
-  --bg:#031018;
-  --panel:#071f2c;
-  --line:#7ff0ff;
-  --line-dim:rgba(90,230,255,.25);
-  --ink:#03212e;
-  --card:#d9f6ff;
-  --accent:#22d3ff;
-  --muted:rgba(190,240,255,.7);
-}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;
-  font-family:"Segoe UI",Roboto,Arial,sans-serif;user-select:none}
-body{overscroll-behavior:none}
-
-/* ---- background particles ---- */
-#scene{position:fixed;inset:0;z-index:0;background:
-  radial-gradient(1200px 700px at 15% 10%, rgba(0,160,220,.14), transparent 60%),
-  radial-gradient(1100px 800px at 80% 85%, rgba(0,90,160,.12), transparent 60%),
-  radial-gradient(800px 700px at 55% 30%, rgba(0,200,255,.06), transparent 65%),
-  var(--bg)}
-#scene::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(700px 500px at 70% 90%, rgba(0,230,255,.05), transparent 60%)}
-#web{position:fixed;inset:0;z-index:1;pointer-events:none;transition:opacity .4s}
-#particles{position:fixed;inset:0;z-index:2;pointer-events:none}
-#scene,#web,#particles{transition:opacity .5s}
-body.web-off #web{opacity:0}
-#webToggle{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
-  border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
-  transition:background .2s,color .2s,box-shadow .25s}
-#webToggle:hover{color:#fff;background:rgba(90,140,255,.35);border-color:rgba(120,170,255,.7)}
-#webToggle.on{background:#fff;color:#000;font-weight:700;box-shadow:0 0 22px rgba(255,255,255,.5)}
-#webClear{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
-  border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
-  transition:background .2s,color .2s,box-shadow .25s}
-#webClear:hover{color:#fff;background:rgba(255,70,70,.4);border-color:rgba(255,100,100,.8)}
-#saveFile,#loadFile{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
-  border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
-  transition:background .2s,color .2s,box-shadow .25s}
-#saveFile:hover{color:#fff;background:rgba(46,204,113,.4);border-color:rgba(80,220,150,.8)}
-#loadFile:hover{color:#fff;background:rgba(52,152,219,.4);border-color:rgba(100,190,255,.8)}
-#saveFile.on,#loadFile.on{background:#fff;color:#000;font-weight:700}
-#saveFile.on:hover{background:rgba(46,204,113,.4);color:#fff}
-#loadFile.on:hover{background:rgba(52,152,219,.4);color:#fff}
-/* chronology switcher bar */
-#chronoBar{position:fixed;top:0;left:0;right:0;z-index:29;display:flex;align-items:center;
-  gap:8px;padding:6px 18px;background:rgba(16,16,16,.85);backdrop-filter:blur(6px);
-  border-bottom:1px solid var(--line-dim);overflow-x:auto}
-body.chronoBarOpen header{top:44px}
-#chronoBar .cbt{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
-  border-radius:10px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;
-  transition:all .2s}
-#chronoBar .cbt:hover{color:#fff;background:rgba(255,255,255,.1)}
-#chronoBar .cbt.active{background:#fff;color:#000;font-weight:700}
-#chronoBar .cbt.plus{border-style:dashed}
-#chronoBar .cbwrap{position:relative;display:inline-flex}
-#chronoBar .cbdel{position:absolute;top:-7px;right:-7px;width:18px;height:18px;border-radius:50%;
-  border:1px solid #000;background:#ff5b5b;color:#fff;cursor:pointer;font-size:11px;line-height:1;
-  display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.5);
-  opacity:0;transition:opacity .2s}
-#chronoBar .cbwrap:hover .cbdel{opacity:1}
-#chronoBar .cbdel:hover{background:#ff3b3b;transform:scale(1.15)}
-/* status toggle buttons in header */
-.statusWrap{display:flex;gap:6px;height:46px}
-.stBtn{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
-  border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
-  transition:background .2s,color .2s,box-shadow .25s;display:flex;align-items:center;gap:7px;white-space:nowrap}
-.stBtn .led{width:12px;height:12px;border-radius:50%;flex:none;transition:box-shadow .25s,background .25s}
-.stBtn#doneBtn.on{background:#12401f;color:#9fffc3;border-color:rgba(46,204,113,.8);font-weight:700}
-.stBtn#doneBtn.on .led{background:#2ecc71;box-shadow:0 0 12px rgba(46,204,113,.9)}
-.stBtn#undoneBtn.on{background:#401a1a;color:#ff9f9f;border-color:rgba(255,80,80,.8);font-weight:700}
-.stBtn#undoneBtn.on .led{background:#ff3b3b;box-shadow:0 0 12px rgba(255,60,60,.9)}
-.stBtn:not(.on) .led{background:#555}
-.stBtn#doneBtn:hover{color:#b8ffd0;background:rgba(46,204,113,.35);border-color:rgba(120,240,170,.8)}
-.stBtn#undoneBtn:hover{color:#ffc0c0;background:rgba(255,60,60,.35);border-color:rgba(255,120,120,.8)}
-
-/* ---- header ---- */
-header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:center;gap:14px;
-  padding:12px 18px;background:linear-gradient(180deg,rgba(5,5,5,.85),rgba(5,5,5,0));
-  backdrop-filter:blur(2px)}
-.logo{font-size:20px;font-weight:700;letter-spacing:2px;white-space:nowrap;
-  text-transform:uppercase;color:#dffaff;text-shadow:0 0 12px rgba(0,220,255,.45)}
-.logo b{font-weight:800}
-.logo .sl{color:var(--muted);font-weight:300}
-
-#clock{font-variant-numeric:tabular-nums;font-size:15px;letter-spacing:1px;
-  color:#fff;background:var(--panel);border:1px solid var(--line-dim);padding:0 14px;
-  border-radius:12px;height:46px;display:flex;align-items:center;font-weight:700;
-  box-shadow:0 0 20px rgba(255,255,255,.08)}
-#clock .dz{font-weight:400;opacity:.6;font-size:12px;margin-left:8px}
-
-/* zoom & pan controls */
-#zoom{display:flex;align-items:center;gap:2px;background:var(--panel);
-  border:1px solid var(--line-dim);border-radius:12px;padding:2px 4px;height:46px}
-#zoom button{width:32px;height:40px;border:none;background:transparent;color:#fff;
-  cursor:pointer;font-size:18px;font-weight:700;line-height:1;transition:transform .12s,color .2s}
-#zoom button:hover{color:#000;background:#fff;border-radius:8px;transform:scale(1.12)}
-#zoom .pct{min-width:46px;text-align:center;color:var(--muted);font-size:11px;
-  font-variant-numeric:tabular-nums;letter-spacing:.3px}
-#resetView{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
-  border-radius:12px;padding:0 12px;height:46px;cursor:pointer;font-size:13px;
-  transition:background .2s,color .2s}
-#resetView:hover{color:#fff;background:rgba(155,89,182,.4);border-color:rgba(190,130,255,.8)}
-
-/* add button */
-#addBtn{border:1px solid #fff;background:#fff;color:#000;font-weight:700;
-  border-radius:12px;padding:0 16px;height:46px;cursor:pointer;font-size:15px;
-  letter-spacing:.5px;white-space:nowrap;transition:transform .15s,box-shadow .25s}
-#addBtn:hover{transform:scale(1.04);box-shadow:0 0 26px rgba(0,220,255,.7);background:#e8fcff;border-color:#0aa5c9;color:#04485a}
-#addBtn:active{transform:scale(.97)}
-
-/* ---- cards & infinite canvas ---- */
-#board{position:fixed;inset:0;z-index:5;cursor:grab;overflow:hidden;touch-action:none}
+html,body{height:100%;overflow:hidden;font-family:"Segoe UI",Roboto,Arial,sans-serif;background:#f4f6fb;color:#1a2233}
+#board{position:fixed;inset:0;cursor:grab;overflow:hidden;touch-action:none}
 #board.panning{cursor:grabbing}
 #world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
-#world.smooth{transition:transform .35s cubic-bezier(.22,1,.36,1)}
-.card{position:absolute;width:258px;background:var(--card);color:var(--ink);
-  border-radius:14px;box-shadow:0 10px 34px rgba(0,0,0,.5),0 0 0 1px rgba(0,0,0,.08);
-  animation:pop .55s cubic-bezier(.2,1.4,.3,1);cursor:grab;touch-action:none;
-  will-change:transform;transform-style:preserve-3d;
-  transition:transform .35s cubic-bezier(.2,1.2,.3,1), box-shadow .4s ease, background .3s ease, border-radius .35s ease;
-  }
-.card::after{content:"";position:absolute;inset:0;border-radius:14px;pointer-events:none;
-  background:linear-gradient(140deg,rgba(255,255,255,.25),transparent 45%);opacity:0;
-  transition:opacity .4s ease}
-.card:hover::after{opacity:1}
-/* tilt toward cursor, driven by CSS vars --tx/--ty/--rot set in JS */
-.card{--tx:0px;--ty:0px;--rot:0deg;--scale:1}
-.card.hovering{transform:translateY(-8px) translate(var(--tx),var(--ty)) rotate(var(--rot)) scale(var(--scale));
-  z-index:30;box-shadow:0 30px 70px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.14),0 0 50px rgba(180,200,255,.25)}
-.card.dragging{cursor:grabbing;box-shadow:0 18px 50px rgba(0,0,0,.7);z-index:50;
-  transition:box-shadow .2s,transform .15s}
-@keyframes pop{from{transform:scale(.6) rotateZ(-3deg);opacity:0}to{transform:scale(1) rotateZ(0);opacity:1}}
-.card .glowAccent{position:absolute;inset:0;border-radius:14px;pointer-events:none;opacity:0;
-  transition:opacity .4s ease;background:radial-gradient(200px 120px at 30% 0%, rgba(120,180,255,.25), transparent 70%)}
-.card:hover .glowAccent{opacity:1}
-.card .head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.08);position:relative}
-.card .dot{width:9px;height:9px;border-radius:50%;background:#000;flex:none}
-.card .dt{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.4px}
-.card .dt .t{color:#555;font-weight:600}
-.card .rm{margin-left:auto;border:none;background:transparent;color:#999;cursor:pointer;
-  font-size:16px;line-height:1;padding:2px 4px;transition:color .2s}
-.card .rm:hover{color:#c00}
-.card .linkport{width:12px;height:12px;border-radius:50%;border:2px solid #555;background:#fff;
-  cursor:crosshair;flex:none;position:relative;transition:background .2s,border-color .2s,box-shadow .2s}
-.card .linkport:hover{background:#ffd;border-color:#000;box-shadow:0 0 10px rgba(255,255,150,.8)}
-.card .body{padding:12px}
-.card .title{font-size:15px;font-weight:800;margin-bottom:6px;line-height:1.25;outline:none}
-.card .desc{font-size:13px;color:#333;white-space:pre-wrap;line-height:1.45;margin-bottom:8px;outline:none}
-.card .title[contenteditable="true"]:focus,.card .desc[contenteditable="true"]:focus{
-  box-shadow:0 0 0 2px rgba(0,220,255,.5);border-radius:6px}
-.card .emptyhint{color:#aaa;font-style:italic}
-.card .addrow{display:flex;align-items:center;gap:8px;margin-top:6px}
-.card .addrow input{flex:1;border:1px dashed rgba(0,0,0,.25);border-radius:8px;padding:7px 10px;
-  font-size:13px;font-family:inherit;background:rgba(255,255,255,.55);outline:none;transition:border .2s}
-.card .addrow input:focus{border-color:#0aa5c9}
-.card .addrow button{border:none;background:#0aa5c9;color:#fff;border-radius:8px;width:30px;height:30px;
-  cursor:pointer;font-size:16px;line-height:1}
-.card .kvrow{display:flex;align-items:center;gap:6px;margin-top:4px}
-.card .kvrow input{flex:1;border:1px solid rgba(0,0,0,.15);border-radius:6px;padding:5px 8px;font-size:12px;
-  font-family:inherit;background:rgba(255,255,255,.6);outline:none}
-.card .kvrow input:focus{border-color:#0aa5c9}
-.card .kvrow button{border:none;background:transparent;color:#c00;cursor:pointer;font-size:15px}
-.card .photos{display:flex;flex-wrap:wrap;gap:6px}
-.card .photos img{width:100%;height:120px;object-fit:cover;border-radius:4px;
-  background:#ddd;display:block}
-.card .subs{border-top:1px dashed rgba(0,0,0,.18);margin-top:8px;padding-top:6px}
-.card .subrow{font-size:12px;color:#333;line-height:1.4}
-.card .subrow .k{font-weight:700;color:#000}
-.card .notes{margin-top:8px;font-size:12px;color:#444;background:rgba(0,0,0,.05);
-  border-radius:6px;padding:6px 8px;white-space:pre-wrap;font-style:italic}
-.card .tabs{display:flex;gap:4px;padding:6px 10px 0}
-.card .tab{flex:1;border:1px solid rgba(0,0,0,.15);background:transparent;border-radius:6px;
-  padding:4px 0;font-size:11px;font-weight:700;color:#555;cursor:pointer;font-family:inherit;
-  transition:all .15s}
-.card .tab:hover{background:rgba(0,0,0,.06)}
-.card .tab.on{background:#000;color:#fff;border-color:#000}
-.card .tabpage{display:none}
-.card .tabpage.on{display:block}
-.card .title{font-size:15px;font-weight:800;margin-bottom:6px;line-height:1.25}
-.card .extraTables{display:flex;flex-direction:column;gap:6px;margin-top:4px}
-.card .extraTable{border:1px solid rgba(0,0,0,.15);border-radius:6px;padding:6px 8px}
-.card .extraTable .et-title{font-weight:800;font-size:12px;color:#000;margin-bottom:3px}
-.card .extraTable ul{list-style:none;margin:0;padding:0}
-.card .extraTable li{font-size:12px;color:#333;padding:1px 0;line-height:1.4}
-.card .extraTable li::before{content:"· ";color:#888}
-.card .muted{font-size:11px;color:#666;margin-top:8px;font-style:italic}
+#svgLayer{position:absolute;top:0;left:0;pointer-events:none;overflow:visible}
+.node{position:absolute;min-width:70px;max-width:190px;background:#fff;border:1.5px solid #2b3a67;
+  border-radius:10px;padding:8px 12px;cursor:grab;box-shadow:0 3px 12px rgba(31,44,80,.12);
+  font-size:14px;line-height:1.25;text-align:center;touch-action:none;transition:box-shadow .2s}
+.node:hover{box-shadow:0 6px 20px rgba(31,44,80,.2)}
+.node.dragging{cursor:grabbing;z-index:50;box-shadow:0 12px 30px rgba(31,80,120,.35)}
+.node .root{font-weight:800;font-size:17px;border-color:#e0a800;background:#fff7d6}
+.node .branch{font-weight:700;border-color:#0aa5c9;background:#e6fbff}
+.node .note{font-size:11px;color:#7a86a0;margin-top:2px}
+.node .ops{position:absolute;top:-9px;right:-9px;display:none;gap:4px}
+.node:hover .ops{display:flex}
+.node .ops button{width:20px;height:20px;border-radius:50%;border:1px solid #ccc;background:#fff;color:#333;
+  cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center}
+.node .ops .add{color:#0a6;border-color:#0a6}
+.node .ops .del{color:#d33;border-color:#d33}
 
-/* card color themes — harmonious, readable */
-.card.c-red{--bg:#ffd6d1;--acc:#c0392b;--ink:#6b1510}
-.card.c-green{--bg:#d2f0dd;--acc:#1e8e4e;--ink:#0a4020}
-.card.c-gray{--bg:#e3e6ea;--acc:#5c6570;--ink:#232a31}
-.card.c-purple{--bg:#e5d9f8;--acc:#7a48c9;--ink:#3c2270}
-.card.c-yellow{--bg:#fceeb6;--acc:#b8860b;--ink:#5c4400}
-.card.themed{background:var(--bg);box-shadow:0 12px 34px rgba(0,0,0,.5),0 0 0 2px var(--acc)}
-.card.themed .head{border-bottom-color:var(--acc)}
-.card.themed .dot{background:var(--acc)}
-.card.themed .dt,.card.themed .title,.card.themed .subrow .k{color:var(--ink)}
-.card.themed .t,.card.themed .subrow{color:var(--ink)}
-.card.themed .tab.on{background:var(--acc);border-color:var(--acc)}
-.card.themed .tab{border-color:var(--acc)}
-.card.themed .swatch.sel{box-shadow:0 0 0 2px var(--acc)}
-.card .colorbar{display:flex;gap:5px;padding:8px 12px 4px}
-.card .swatch{width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.2);cursor:pointer;flex:none}
-.card .swatch.sel{box-shadow:0 0 0 2px #000}
-/* status shown ONLY via the little circle on the card head */
-.card .statusLamp{width:14px;height:14px;border-radius:50%;flex:none;
-  border:2px solid rgba(0,0,0,.25);transition:background .3s,box-shadow .3s}
-.card .statusLamp.done{background:#2ecc71;box-shadow:0 0 10px rgba(46,204,113,.9);border-color:rgba(46,204,113,.5)}
-.card .statusLamp.undone{background:#ff3b3b;box-shadow:0 0 10px rgba(255,60,60,.9);border-color:rgba(255,80,80,.5)}
+#toolbar{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:8px;
+  align-items:center;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border:1px solid #dfe4f0;
+  border-radius:14px;padding:8px 12px;box-shadow:0 6px 24px rgba(30,40,70,.12)}
+#toolbar button{border:1px solid #ccd3e4;background:#fff;color:#2b3a67;border-radius:9px;padding:8px 14px;
+  font-size:13px;font-weight:600;cursor:pointer;transition:all .18s}
+#toolbar button:hover{background:#e8f2ff;border-color:#7aa6ef}
+#toolbar .zoom{display:flex;gap:4px}
+#toolbar .zoom button{width:34px;padding:8px 0;font-weight:700}
+#toolbar span{color:#7a86a0;font-size:12px;min-width:44px;text-align:center}
+#titleInput{border:1px solid #ccd3e4;border-radius:9px;padding:8px 12px;font-size:14px;font-weight:700;
+  color:#2b3a67;outline:none;width:200px}
+#titleInput:focus{border-color:#7aa6ef}
 
-/* ---- hint & empty ---- */
-#hint{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:20;
-  color:var(--muted);font-size:13px;letter-spacing:.3px;text-align:center;
-  pointer-events:none;animation:breathe 4s ease-in-out infinite;white-space:nowrap}
-#credit{display:block;margin-top:4px;font-size:8px;letter-spacing:.5px;
-  text-transform:uppercase;font-weight:500;
-  color:#ffffff;text-shadow:0 0 6px rgba(255,255,255,.9),0 0 14px rgba(255,255,255,.45)}
-@keyframes breathe{0%,100%{opacity:.5}50%{opacity:1}}
-#empty{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;z-index:4;pointer-events:none;text-align:center;gap:14px}
-#empty h2{font-size:26px;font-weight:300;letter-spacing:4px}
-#empty p{color:var(--muted);max-width:420px;line-height:1.6}
-#empty .plus{font-size:60px;font-weight:200;color:#fff;opacity:.7;animation:floaty 3s ease-in-out infinite}
-@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-
-/* link mode */
-#linkBtn{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
-  border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
-  transition:background .2s,color .2s,box-shadow .25s}
-#linkBtn:hover{color:#fff;background:rgba(255,165,0,.4);border-color:rgba(255,190,90,.8)}
-#linkBtn.on{background:#fff;color:#000;font-weight:700;box-shadow:0 0 22px rgba(255,255,255,.5)}
-#board.linkmode #world{filter:brightness(1.08)}
-#board.linkmode .card{cursor:crosshair;box-shadow:0 0 0 2px #fff,0 10px 34px rgba(0,0,0,.6)}
-#board.linkmode .card.pick{box-shadow:0 0 0 3px #fff,0 0 30px rgba(255,255,255,.6);
-  transform:scale(1.03);z-index:40}
-#linkTip{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:45;
-  background:#fff;color:#000;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:700;
-  box-shadow:0 8px 30px rgba(0,0,0,.6);display:none;animation:tipIn .2s}
-#linkTip.show{display:block}
-@keyframes tipIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%)}}
-
-/* ---- fullscreen card expansion animation ---- */
-#detailModal .box{transform-origin:center;transition:none;position:relative}
-#detailModal.open .box{animation:cardGrow .65s cubic-bezier(.16,1.08,.3,1) both}
-@keyframes cardGrow{
-  0%{transform:translate(var(--sx,0px),var(--sy,0px)) scale(.1) rotate3d(1,-1,.5,45deg);opacity:0;border-radius:50%}
-  45%{opacity:1;border-radius:10px}
-  100%{transform:translate(0,0) scale(1) rotate3d(0,0,0,0);opacity:1;border-radius:10px;box-shadow:0 40px 120px rgba(0,0,0,.7)}
-}
-/* entrance sweep effects layered on the box */
-#detailModal.open .box::before{
-  content:"";position:absolute;inset:0;border-radius:10px;pointer-events:none;
-  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.7) 50%,transparent 70%);
-  background-size:300% 300%;animation:sheen 1s ease forwards;mix-blend-mode:overlay;z-index:5}
-@keyframes sheen{0%{background-position:120% 0}100%{background-position:-120% 0}}
-#detailModal.open .box h3{animation:titleIn .5s .25s cubic-bezier(.2,1.6,.3,1) both}
-#detailModal.open .fields{animation:fieldsIn .5s .35s cubic-bezier(.2,1.4,.3,1) both}
-#detailModal.open .actions{animation:actionsIn .4s .5s cubic-bezier(.2,1.4,.3,1) both}
-@keyframes titleIn{from{transform:translateX(-24px);opacity:0;letter-spacing:6px}to{transform:none;opacity:1;letter-spacing:0}}
-@keyframes fieldsIn{from{transform:scale(.9) translateY(16px);opacity:0}to{transform:none;opacity:1}}
-@keyframes actionsIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-
-/* ---- modal ---- */
-.modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.55);backdrop-filter:blur(3px)}
-.modal.open{display:flex;animation:fade .25s}
-@keyframes fade{from{opacity:0}to{opacity:1}}
-.box{width:min(560px,92vw);max-height:86vh;overflow:auto;background:#fff;color:#000;
-  border-radius:10px;box-shadow:0 30px 80px rgba(0,0,0,.6);animation:rise .4s cubic-bezier(.2,1.3,.3,1)}
-@keyframes rise{from{transform:translateY(30px) scale(.96);opacity:0}to{transform:none;opacity:1}}
-.box h3{font-size:18px;padding:18px 22px;border-bottom:1px solid #e5e5e5}
-
-/* animated time/date picker inside modal (spin slots) */
-.selectors{display:flex;gap:8px;flex-wrap:wrap;padding:20px 22px 6px}
-.slot{flex:1;min-width:80px;text-align:center;border:1px solid #e0e0e0;border-radius:10px;
-  cursor:pointer;padding:12px 6px;transition:all .2s;position:relative;overflow:hidden}
-.slot .kind{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px}
-.slot .num{font-size:26px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
-.slot .sub{font-size:11px;color:#666}
-.slot.active{border-color:#000;box-shadow:0 0 0 2px #000,0 8px 20px rgba(0,0,0,.2);transform:translateY(-2px)}
-.slot.active::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:#000;
-  animation:slideIn .3s}
-@keyframes slideIn{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-
-#slotList{max-height:240px;overflow-y:auto;margin:0 22px 14px;border-radius:10px;
-  border:1px solid #eee;background:#fafafa}
-#slotList button{display:block;width:100%;text-align:left;padding:12px 16px;border:none;
-  background:transparent;font-size:16px;cursor:pointer;border-bottom:1px solid #f0f0f0;
-  transition:background .15s,transform .15s;font-variant-numeric:tabular-nums}
-#slotList button:last-child{border-bottom:none}
-#slotList button:hover{background:#000;color:#fff;transform:translateX(4px)}
-
-.fields{padding:6px 22px 14px;display:flex;flex-direction:column;gap:12px}
-.fields label{font-size:12px;color:#666;margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.5px}
-.fields input[type=text],.fields textarea,.fields input[type=number]{
-  width:100%;border:1px solid #ddd;border-radius:8px;padding:11px 12px;font-size:14px;
-  font-family:inherit;color:#000;background:#fff;transition:border .2s,box-shadow .2s}
-.fields input:focus,.fields textarea:focus{border-color:#000;outline:none;box-shadow:0 0 0 2px rgba(0,0,0,.15)}
-.fields textarea{resize:vertical;min-height:70px}
-
-.profileBlock{border:1px dashed #ccc;border-radius:10px;padding:14px}
-.profileBlock h4{font-size:13px;margin-bottom:10px;color:#000;text-transform:uppercase;letter-spacing:.6px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.grid2 label{font-size:10px;margin-bottom:3px}
-.profileBlock textarea{min-height:56px;margin-bottom:10px}
-
-#subBuilder{display:flex;flex-direction:column;gap:10px}
-.subBuild{border:1px solid #ddd;border-radius:10px;padding:10px;background:#fafafa}
-.subBuild .sb-head{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-.subBuild .sb-head input{flex:1;font-weight:700}
-.subBuild .sb-head button{width:30px;height:30px;border-radius:8px;border:1px solid #ddd;
-  background:#fff;cursor:pointer;color:#c00;font-size:16px;font-weight:700}
-.subBuild .sb-items{display:flex;flex-direction:column;gap:6px}
-.subBuild .sb-row{display:flex;gap:6px}
-.subBuild .sb-row input{flex:1}
-.subBuild .sb-row button{width:26px;height:26px;border-radius:6px;border:1px solid #ddd;
-  background:#fff;cursor:pointer;color:#c00}
-#addSubBtn{border:1.5px dashed #bbb;border-radius:10px;padding:10px;background:#fff;
-  cursor:pointer;color:#666;font-size:14px;width:100%;transition:all .2s}
-#addSubBtn:hover{color:#000;border-color:#000}
-.addItemBtn{border:1px dashed #aaa;border-radius:8px;padding:6px;background:#fff;
-  cursor:pointer;color:#666;font-size:12px;width:100%;margin-top:6px}
-.addItemBtn:hover{color:#000;border-color:#000}
-
-.colorChooser{display:flex;flex-wrap:wrap;gap:8px}
-.csw{border:2px solid #ddd;border-radius:20px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;
-  font-family:inherit;transition:all .15s;background:#fff;color:#000}
-.csw:hover{transform:translateY(-2px)}
-.csw.sel{border-color:#000;box-shadow:0 0 0 2px #000}
-.csw.c-red{background:#ff5d5d;border-color:#ff5d5d;color:#fff}
-.csw.c-green{background:#50c878;border-color:#50c878;color:#fff}
-.csw.c-gray{background:#a8aeb6;border-color:#a8aeb6;color:#fff}
-.csw.c-purple{background:#a878ff;border-color:#a878ff;color:#fff}
-.csw.c-yellow{background:#f0ce4d;border-color:#f0ce4d;color:#000}
-.csw.sel{box-shadow:0 0 0 3px #000}
-
-/* social icons picker + card display */
-.socPick{display:flex;flex-wrap:wrap;gap:8px}
-.spic{width:40px;height:40px;border-radius:50%;border:2px solid #ddd;background:#fff;color:#555;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s}
-.spic svg{width:20px;height:20px}
-.spic:hover{transform:translateY(-2px);border-color:#aaa}
-.spic.sel{border:2px solid #000;box-shadow:0 0 0 2px #000}
-/* brand colors for picker icons */
-.spic.bg-vk{background:#0077ff;color:#fff}.spic.sel.bg-vk{border-color:#005bb5}
-.spic.bg-tg{background:#29b6f6;color:#fff}.spic.sel.bg-tg{border-color:#0088cc}
-.spic.bg-wa{background:#25d366;color:#fff}.spic.sel.bg-wa{border-color:#128c7e}
-.spic.bg-yt{background:#ff0000;color:#fff}.spic.sel.bg-yt{border-color:#b30000}
-.spic.bg-ig{background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff}
-.spic.bg-tt{background:#111;color:#fff}.spic.sel.bg-tt{border-color:#000}
-.spic.bg-x{background:#0f1419;color:#fff}.spic.sel.bg-x{border-color:#000}
-.spic.bg-fb{background:#1877f2;color:#fff}.spic.sel.bg-fb{border-color:#0f5bb5}
-.spic.bg-ok{background:#ee8208;color:#fff}.spic.sel.bg-ok{border-color:#c76a00}
-.spic.bg-gh{background:#24292e;color:#fff}.spic.sel.bg-gh{border-color:#111}
-.spic.bg-in{background:#0a66c2;color:#fff}.spic.sel.bg-in{border-color:#084e8f}
-.card .cardSocials{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 8px}
-.card .cardSocials .csoc{width:26px;height:26px;border-radius:50%;color:#fff;
-  display:flex;align-items:center;justify-content:center}
-.card .cardSocials .csoc svg{width:14px;height:14px}
-/* brand colors for on-card icons */
-.csoc.bg-vk{background:#0077ff}.csoc.bg-tg{background:#29b6f6}.csoc.bg-wa{background:#25d366}
-.csoc.bg-yt{background:#ff0000}.csoc.bg-ig{background:linear-gradient(45deg,#f09433,#bc1888)}
-.csoc.bg-tt{background:#121212}.csoc.bg-x{background:#0f1419}.csoc.bg-fb{background:#1877f2}
-.csoc.bg-ok{background:#ee8208}.csoc.bg-gh{background:#24292e}.csoc.bg-in{background:#0a66c2}
-
-#photoField label{border:1.5px dashed #bbb;border-radius:10px;padding:16px;text-align:center;
-  cursor:pointer;display:block;transition:all .2s;color:#666;font-size:14px}
-#photoField label:hover{border-color:#000;color:#000}
-#photoField input{display:none}
-#preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-#preview figure{position:relative;margin:0}
-#preview img{width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid #ddd}
-#preview button{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;
-  border:none;background:#c00;color:#fff;cursor:pointer;font-size:12px;line-height:1}
-.actions{display:flex;gap:10px;padding:14px 22px 20px;justify-content:flex-end;
-  border-top:1px solid #eee}
-.actions button{padding:11px 22px;border-radius:8px;font-size:15px;font-weight:700;
-  cursor:pointer;border:1px solid #000;transition:transform .15s,background .2s}
-#cancelBtn{background:#fff;color:#000}
-#cancelBtn:hover{background:#f0f0f0}
-#saveBtn{background:#000;color:#fff}
-#saveBtn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.3)}
-
-@media (max-width:1500px){
-  header{flex-wrap:wrap;gap:8px;padding:10px 14px;position:relative}
-}
-@media (max-width:760px){
-  header{flex-wrap:wrap;gap:8px}
-  #clock{order:1}
-  .logo{font-size:16px}
-  #addBtn{order:3}
-  #zoom{order:3}
-  #resetView{order:4}
-  #linkBtn{order:5}
-  #webToggle{order:6}
-}
+.credit{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:20;
+  font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:#8a94aa;
+  text-shadow:0 0 6px rgba(255,255,255,.8)}
+.hint{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);z-index:20;
+  font-size:12px;color:#aab2c4;background:rgba(255,255,255,.8);padding:4px 12px;border-radius:20px}
 </style>
 </head>
 <body>
-<canvas id="web"></canvas>
-<canvas id="particles"></canvas>
-
-<header>
-  <div class="logo">Хронология<b> / </b><span class="sl">2 · Неон</span></div>
-  <button id="addBtn">＋ Добавить событие</button>
-  <div id="clock">--:--:-- <span class="dz">МСК</span></div>
-  <div id="zoom">
-    <button id="zIn" title="Приблизить">＋</button>
-    <span class="pct" id="zPct">100%</span>
-    <button id="zOut" title="Отдалить">−</button>
-  </div>
-  <button id="resetView" title="Сбросить вид">Центр</button>
-  <button id="linkBtn" title="Связать события">◎ Связи</button>
-  <button id="webToggle" title="Показать/скрыть паутину">Паутина</button>
-  <button id="webClear" title="Убрать все связи паутины">Очистить паутину</button>
-  <button id="saveFile" title="Сохранить всё в файл">Сохранить</button>
-  <button id="loadFile" title="Загрузить из файла">Загрузить</button>
-  <div class="statusWrap" id="statusWrap">
-    <button id="doneBtn" class="stBtn" title="Работа завершена"><span class="led"></span>Завершено</button>
-    <button id="undoneBtn" class="stBtn" title="Работа не завершена"><span class="led"></span>Не завершено</button>
-  </div>
-  <input type="file" id="importFile" accept=".json,application/json" style="display:none" aria-label="Загрузить файл">
-</header>
-<div id="chronoBar"></div>
-
-<div id="empty">
-  <div class="plus">＋</div>
-  <h2>Хронология пуста</h2>
-  <p>Нажмите «Добавить событие», выберите точное время, месяц и год.<br>
-  События появятся плавающими карточками, связанными общей паутиной.<br>Перетаскивайте их — они двигаются, куда захотите.</p>
+<div id="board"><div id="world">
+<svg id="svgLayer"></svg>
+</div></div>
+<div id="toolbar">
+  <input id="titleInput" value="Тема" aria-label="Название темы">
+  <div class="zoom"><button id="zIn">＋</button><button id="fit">по размеру</button><button id="zOut">−</button><span id="zp">100%</span></div>
+  <button id="addBranch">＋ ветвь</button>
 </div>
-
-<div id="hint">✱ добавляйте события · перетаскивайте карточки · клик по паутине-кнопке связывает события
-  <span id="credit">АВТОР РАЗРАБОТКИ: ЛИНКОЛЬН</span></div>
-
-<div id="board"></div>
-
-<div class="modal" id="modal">
-  <div class="box">
-    <h3 id="modalTitle">Новое событие</h3>
-    <div class="selectors" id="selectors"></div>
-    <div id="slotList"></div>
-    <div class="fields">
-      <div id="colorField">
-        <label>Цвет таблицы</label>
-        <div class="colorChooser">
-          <button class="csw c0 sel" data-c="" title="Стандартный">Белый</button>
-          <button class="csw c-red" data-c="red" title="Красный">Красный</button>
-          <button class="csw c-green" data-c="green" title="Зелёный">Зелёный</button>
-          <button class="csw c-gray" data-c="gray" title="Серый">Серый</button>
-          <button class="csw c-purple" data-c="purple" title="Фиолетовый">Фиолетовый</button>
-          <button class="csw c-yellow" data-c="yellow" title="Жёлтый">Жёлтый</button>
-        </div>
-      </div>
-      <div id="titleField">
-        <label>Заголовок / Действие</label>
-        <input type="text" id="inTitle" placeholder="Например: Запуск проекта" aria-label="Заголовок события">
-      </div>
-      <div id="descField">
-        <label>Описание (необязательно)</label>
-        <textarea id="inDesc" placeholder="Детали события…" aria-label="Описание события"></textarea>
-      </div>
-      <div class="profileBlock">
-        <h4>Личные данные</h4>
-        <div class="grid2">
-          <div><label>Номер</label><input type="text" id="inNum" aria-label="Номер"></div>
-          <div><label>Адрес</label><input type="text" id="inAddr" aria-label="Адрес"></div>
-          <div><label>Имя</label><input type="text" id="inFirst" aria-label="Имя"></div>
-          <div><label>Фамилия</label><input type="text" id="inLast" aria-label="Фамилия"></div>
-          <div><label>Отчество</label><input type="text" id="inPatr" aria-label="Отчество"></div>
-          <div><label>Семейное положение</label><input type="text" id="inFam" aria-label="Семейное положение"></div>
-        </div>
-        <label>Привычки</label>
-        <textarea id="inHabits" aria-label="Привычки"></textarea>
-        <label>Определённые черты характера</label>
-        <textarea id="inTraits" aria-label="Черты характера"></textarea>
-        <label>Хобби</label>
-        <textarea id="inHobby" aria-label="Хобби"></textarea>
-        <label>Соц. сети</label>
-        <div class="socPick" id="socPick"></div>
-        <input type="hidden" id="inSocial" aria-label="Соц. сети">
-        <label>Учебное заведение</label>
-        <input type="text" id="inSchool" aria-label="Учебное заведение">
-        <label>Работа</label>
-        <input type="text" id="inWork" aria-label="Работа">
-      </div>
-      <div id="notesField">
-        <label>Заметки</label>
-        <textarea id="inNotes" placeholder="Заметки…" aria-label="Заметки"></textarea>
-      </div>
-      <div id="subtablesField">
-        <label>Подтаблицы</label>
-        <div id="subBuilder"></div>
-        <button type="button" id="addSubBtn">＋ Добавить подтаблицу</button>
-      </div>
-      <div id="photoField">
-        <label>＋ Нажмите, чтобы добавить фотографии</label>
-        <input type="file" id="inPhoto" accept="image/*" multiple aria-label="Добавить фотографии">
-        <div id="preview"></div>
-      </div>
-    </div>
-    <div class="actions">
-      <button id="cancelBtn">Отмена</button>
-      <button id="saveBtn">Сохранить</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="detailModal">
-  <div class="box">
-    <h3 id="detTitle">Детали события</h3>
-    <div class="fields">
-      <div><label>Заголовок</label><input type="text" id="detTitleIn" aria-label="Заголовок"></div>
-      <div><label>Описание</label><textarea id="detDesc" aria-label="Описание"></textarea></div>
-      <div class="profileBlock">
-        <h4>Личные данные</h4>
-        <div class="grid2">
-          <div><label>Номер</label><input type="text" id="detNum" aria-label="Номер"></div>
-          <div><label>Адрес</label><input type="text" id="detAddr" aria-label="Адрес"></div>
-          <div><label>Имя</label><input type="text" id="detFirst" aria-label="Имя"></div>
-          <div><label>Фамилия</label><input type="text" id="detLast" aria-label="Фамилия"></div>
-          <div><label>Отчество</label><input type="text" id="detPatr" aria-label="Отчество"></div>
-          <div><label>Семейное положение</label><input type="text" id="detFam" aria-label="Семейное положение"></div>
-        </div>
-        <label>Соц. сети</label><textarea id="detSocial" aria-label="Соц. сети"></textarea>
-        <label>Привычки</label><textarea id="detHabits" aria-label="Привычки"></textarea>
-        <label>Черты характера</label><textarea id="detTraits" aria-label="Черты характера"></textarea>
-        <label>Хобби</label><textarea id="detHobby" aria-label="Хобби"></textarea>
-        <label>Учебное заведение</label><input type="text" id="detSchool" aria-label="Учебное заведение">
-        <label>Работа</label><input type="text" id="detWork" aria-label="Работа">
-      </div>
-      <div><label>Заметки</label><textarea id="detNotes" aria-label="Заметки"></textarea></div>
-    </div>
-    <div class="actions">
-      <button id="detCancel">Закрыть</button>
-      <button id="detSave">Сохранить изменения</button>
-    </div>
-  </div>
-</div>
+<div class="hint">клик по узлу — переименовать · ＋ — добавить узел · ✕ — удалить · перетаскивайте, зум колесом</div>
+<div class="credit">Автор разработки: Линкольн</div>
 
 <script>
-// ============ helpers ============
-const $ = s => document.querySelector(s);
-const $$ = s => Array.from(document.querySelectorAll(s));
-const board = $("#board");
-const world = document.createElement("div");
-world.id = "world";
-board.appendChild(world);
-const empty = $("#empty");
-
-// ---- multiple chronologies ----
-let chronos=[];
-try{ const cr=localStorage.getItem("chrono2_chronos"); if(cr) chronos=JSON.parse(cr); }catch(e){}
-if(!Array.isArray(chronos)||!chronos.length) chronos=["Хронология 1"];
-let chronoId = (new URLSearchParams(location.search).get("c"))||"1";
-if(chronoId==="new"){ chronos.push("Хронология "+(chronos.length+1)); chronoId=String(chronos.length); saveChronos(); }
-if(!chronos[Number(chronoId)-1]) chronoId="1";
-function saveChronos(){ try{ localStorage.setItem("chrono2_chronos", JSON.stringify(chronos)); }catch(e){} }
-function chronoKey(prefix){ return "chrono2_"+prefix+"_"+chronoId; }
-
-let events = [];
-try{
-  const raw = localStorage.getItem(chronoKey("events"));
-  if(raw) events = JSON.parse(raw);
-}catch(e){}
-let nextId = 1;
-
-// ============ live clock ============
-const clock = $("#clock");
-function tick(){
-  const d = new Date();
-  const p = n => String(n).padStart(2,"0");
-  clock.innerHTML = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}<span class="dz">МСК · ${d.getDate()}.${p(d.getMonth()+1)}.${d.getFullYear()}</span>`;
+const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
+const board=$("#board"),world=$("#world"),svg=$("#svgLayer");
+let zoom=1,panX=60,panY=60;
+let nodes=[],root=null;
+const STORE="mindmap_doc";
+function saveAll(){ try{ localStorage.setItem(STORE,JSON.stringify({title:$("#titleInput").value,zoom,panX,panY,nodes,rootId:root&&root.id})); }catch(e){} }
+let loaded=false;
+function loadAll(){ try{ const d=JSON.parse(localStorage.getItem(STORE)); if(d&&d.rootId){ loaded=true; nodes=d.nodes||[]; zoom=d.zoom||1; panX=d.panX!==undefined?d.panX:60; panY=d.panY!==undefined?d.panY:60; if(d.title)$("#titleInput").value=d.title; root=byID(d.rootId); } }catch(e){} }
+let seq=1; function nid(){return "n"+(seq++);}
+function fontOf(kind){return kind==="root"?20:kind==="branch"?17:15;}
+// seed
+function seed(){
+  nodes=[];
+  root={id:nid(),kind:"root",x:innerWidth/2,y:innerHeight/2,txt:"Центральная тема",children:[]};
+  const b1={id:nid(),kind:"branch",txt:"Ветвь 1",children:[{id:nid(),kind:"leaf",txt:"Идея 1a"},{id:nid(),kind:"leaf",txt:"Идея 1b"}]};
+  const b2={id:nid(),kind:"branch",txt:"Ветвь 2",children:[{id:nid(),kind:"leaf",txt:"Идея 2a"}]};
+  root.children=[b1,b2];
 }
-tick(); setInterval(tick, 250);
-
-// ============ particles background (rich animated sky) ============
-const pCanvas = $("#particles"), pctx = pCanvas.getContext("2d");
-let particles=[], nebulae=[], PW, PH;
-const STAR_COLORS=[
-  ["0,220,255",.9],   // cyan
-  ["120,240,255",.85],// ice cyan
-  ["180,255,220",.8], // mint
-  ["0,160,255",.8],   // blue
-  ["140,235,255",.85] // pale cyan
-];
-function sizeParts(){
-  PW = pCanvas.width = innerWidth;
-  PH = pCanvas.height = innerHeight;
-}
-sizeParts(); addEventListener("resize", sizeParts);
-(function initParts(){
-  for(let i=0;i<150;i++){
-    const col=STAR_COLORS[(Math.random()*STAR_COLORS.length)|0];
-    const big=Math.random()<.08; // a few larger glowing stars
-    particles.push({
-      x:Math.random()*PW, y:Math.random()*PH,
-      baseR:big? (Math.random()*1.6+2.2) : (Math.random()*1.5+.4),
-      r:0,
-      vx:(Math.random()-.5)*.03, vy:(Math.random()-.5)*.03,
-      tw:Math.random()*Math.PI*2, twSpeed:.004+Math.random()*.02,
-      drift:Math.random()*Math.PI*2,
-      c:col[0], cA:col[1],
-      big
-    });
-  }
-  // soft drifting nebulae blobs
-  for(let i=0;i<5;i++){
-    nebulae.push({
-      x:Math.random()*PW, y:Math.random()*PH,
-      r:150+Math.random()*260,
-      hue:Math.random()*360,
-      vx:(Math.random()-.5)*.06, vy:(Math.random()-.5)*.06,
-      tw:Math.random()*Math.PI*2
-    });
-  }
-})();
-function drawParts(){
-  pctx.clearRect(0,0,PW,PH);
-  const t=Date.now()/1000;
-
-  // 1) soft nebulae glows (radial gradients, very faded)
-  for(const nb of nebulae){
-    nb.tw+=.003;
-    nb.x+=nb.vx+Math.sin(t*.1+nb.tw)*.15;
-    nb.y+=nb.vy+Math.cos(t*.08+nb.tw)*.15;
-    if(nb.x<-nb.r)nb.x=PW+nb.r; if(nb.x>PW+nb.r)nb.x=-nb.r;
-    if(nb.y<-nb.r)nb.y=PH+nb.r; if(nb.y>PH+nb.r)nb.y=-nb.r;
-    const breathe=.5+.5*Math.sin(nb.tw);
-    const g=pctx.createRadialGradient(nb.x,nb.y,0,nb.x,nb.y,nb.r*(.7+.3*breathe));
-    g.addColorStop(0,`hsla(${nb.hue},70%,55%,.09)`);
-    g.addColorStop(.7,`hsla(${nb.hue},60%,50%,.04)`);
-    g.addColorStop(1,`hsla(${nb.hue},60%,50%,0)`);
-    pctx.fillStyle=g;
-    pctx.beginPath(); pctx.arc(nb.x,nb.y,nb.r,0,7); pctx.fill();
-    // soft core
-    const gc=pctx.createRadialGradient(nb.x,nb.y,0,nb.x,nb.y,nb.r*.35);
-    gc.addColorStop(0,`hsla(${(nb.hue+30)%360},80%,65%,.08)`);
-    gc.addColorStop(1,`hsla(${(nb.hue+30)%360},70%,60%,0)`);
-    pctx.fillStyle=gc;
-    pctx.beginPath(); pctx.arc(nb.x,nb.y,nb.r*.35,0,7); pctx.fill();
-  }
-
-  // 2) stars with twinkle and occasional faint connecting lines
-  for(let i=0;i<particles.length;i++){
-    const p=particles[i];
-    p.tw+=p.twSpeed;
-    p.x+=p.vx+Math.sin(t*.2+p.drift)*.03;
-    p.y+=p.vy+Math.cos(t*.18+p.drift)*.03;
-    if(p.x<-20)p.x=PW+20; if(p.x>PW+20)p.x=-20;
-    if(p.y<-20)p.y=PH+20; if(p.y>PH+20)p.y=-20;
-    // breathing radius + twinkle alpha
-    p.r=p.baseR*(.8+.4*Math.sin(p.tw*2));
-    const a=p.cA*(.15+.5*Math.abs(Math.sin(p.tw)));
-    // soft halo for bigger stars
-    if(p.big){
-      const halo=pctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*4);
-      halo.addColorStop(0,`rgba(${p.c},${a*.25})`);
-      halo.addColorStop(1,`rgba(${p.c},0)`);
-      pctx.fillStyle=halo;
-      pctx.beginPath(); pctx.arc(p.x,p.y,p.r*4,0,7); pctx.fill();
-    }
-    pctx.globalAlpha=a;
-    pctx.fillStyle=`rgb(${p.c})`;
-    pctx.beginPath(); pctx.arc(p.x,p.y,p.r,0,7); pctx.fill();
-    // cross sparkle on bright stars
-    if(p.big && Math.sin(p.tw)<.1 && Math.sin(p.tw)>-.12){
-      pctx.globalAlpha=a*.6;
-      pctx.strokeStyle=`rgb(${p.c})`;
-      pctx.lineWidth=1;
-      pctx.beginPath();
-      pctx.moveTo(p.x-p.r*3,p.y); pctx.lineTo(p.x+p.r*3,p.y);
-      pctx.moveTo(p.x,p.y-p.r*3); pctx.lineTo(p.x,p.y+p.r*3);
-      pctx.stroke();
-    }
-  }
-  // faint connection web among nearby stars
-  pctx.globalAlpha=1;
-  for(let i=0;i<particles.length;i++){
-    for(let j=i+1;j<particles.length;j++){
-      const a=particles[i], b=particles[j];
-      const dx=a.x-b.x, dy=a.y-b.y, d=Math.hypot(dx,dy);
-      if(d<110){
-        const al=(1-d/110)*.08;
-        pctx.strokeStyle=`rgba(160,190,255,${al})`;
-        pctx.lineWidth=.6;
-        pctx.beginPath(); pctx.moveTo(a.x,a.y); pctx.lineTo(b.x,b.y); pctx.stroke();
-      }
-    }
-  }
-  requestAnimationFrame(drawParts);
-}
-requestAnimationFrame(drawParts);
-
-// ============ web / spider-web connections ============
-const webC = $("#web"), wctx = webC.getContext("2d");
-let WW, WH;
-function sizeWeb(){ WW=webC.width=innerWidth; WH=webC.height=innerHeight; }
-sizeWeb(); addEventListener("resize", sizeWeb);
-
-// toggle auto-web visibility
-const webToggle=$("#webToggle");
-let webVisible=true;
-try{ webVisible = localStorage.getItem("chrono2_web")!=="0"; }catch(e){}
-function applyWebVisible(){ document.body.classList.toggle("web-off", !webVisible); webToggle.classList.toggle("on", webVisible); }
-applyWebVisible();
-webToggle.addEventListener("click", ()=>{
-  webVisible=!webVisible;
-  try{ localStorage.setItem("chrono2_web", webVisible?"1":"0"); }catch(e){}
-  applyWebVisible();
-});
-
-// manual links: array of [idA, idB]
-let links=[];
-function loadLinks(){
-  try{
-    const raw=localStorage.getItem(chronoKey("links"));
-    if(raw) links=JSON.parse(raw);
-    if(!Array.isArray(links)) links=[];
-  }catch(e){ links=[]; }
-}
-loadLinks();
-function saveLinks(){ try{ localStorage.setItem(chronoKey("links"), JSON.stringify(links)); }catch(e){} }
-function hasLink(a,b){ return links.some(l=> (l[0]===a&&l[1]===b)||(l[0]===b&&l[1]===a)); }
-function addLink(a,b){ if(a!==b && !hasLink(a,b)){ links.push([a,b]); saveLinks(); } }
-function removeLink(a,b){ links=links.filter(l=>!( (l[0]===a&&l[1]===b)||(l[0]===b&&l[1]===a) )); saveLinks(); }
-
-// ============ export / import whole state ============
-const saveBtnFile=$("#saveFile"), loadBtnFile=$("#loadFile"), importFile=$("#importFile");
-saveBtnFile.addEventListener("click", ()=>{
-  const state={version:1, events, links, view:{zoom,panX,panY}, webVisible};
-  const blob=new Blob([JSON.stringify(state)],{type:"application/json"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="chronology-"+new Date().toISOString().slice(0,10)+".json";
-  document.body.appendChild(a); a.click();
-  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },100);
-});
-loadBtnFile.addEventListener("click", ()=>importFile.click());
-importFile.addEventListener("change", ()=>{
-  const file=importFile.files[0];
-  if(!file) return;
-  const rd=new FileReader();
-  rd.onload=ev=>{
-    try{
-      const data=JSON.parse(ev.target.result);
-      if(!Array.isArray(data.events)) throw new Error("bad");
-      events=data.events.map(ept=>ept);
-      links=Array.isArray(data.links)?data.links:[];
-      if(data.view){ zoom=data.view.zoom??1; panX=data.view.panX??0; panY=data.view.panY??0; }
-      if(typeof data.webVisible==="boolean"){ webVisible=data.webVisible; applyWebVisible(); }
-      save(); saveLinks();
-      nextId=events.reduce((m,e)=>Math.max(m,Number(e.id)||0),0)+1;
-      // rebuild board
-      $$("#world .card").forEach(c=>c.remove());
-      events.forEach(renderCard);
-      refreshEmpty(); applyView();
-      modal.classList.remove("open");
-      importFile.value="";
-      flashMsg("Загружено");
-    }catch(e){ alert("Не удалось прочитать файл"); }
-  };
-  rd.readAsText(file);
-});
-function flashMsg(t){
-  const d=document.createElement("div"); d.textContent=t;
-  d.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;color:#fff;padding:14px 28px;border-radius:30px;font-size:16px;font-weight:700;z-index:99;box-shadow:0 10px 40px rgba(0,0,0,.7);opacity:0;transition:opacity .3s";
-  document.body.appendChild(d);
-  requestAnimationFrame(()=>d.style.opacity=1);
-  setTimeout(()=>{ d.style.opacity=0; setTimeout(()=>d.remove(),300); },1400);
-}
-
-function getCards(){
-  const out=[];
-  $$("#world .card").forEach(el=>{
-    const id=parseFloat(el.dataset.id);
-    const r=el.getBoundingClientRect();
-    out.push({id, el, x:r.left+r.width/2, y:r.top+r.height/2});
+function byID(id){ return nodes.find(n=>n.id===id); }
+function layoutBranch(b,angle,centerX,centerY){
+  const r1=150;
+  const bx=centerX+Math.cos(angle)*r1, by=centerY+Math.sin(angle)*r1;
+  b.x=bx; b.y=by;
+  const count=b.children.length||1;
+  b.children.forEach((c,ci)=>{
+    const spread=0.6;
+    const a2=angle+(ci-(count-1)/2)*spread;
+    const r2=r1+120;
+    c.x=centerX+Math.cos(a2)*r2; c.y=centerY+Math.sin(a2)*r2;
   });
-  return out;
 }
-function getAnchors(){
-  const els = $$("#world .card:not(.dragging)");
-  const drag = document.querySelector("#world .card.dragging");
-  const centers = els.map(el=>{
-    const r = el.getBoundingClientRect();
-    return {x:r.left+r.width/2, y:r.top+r.height/2};
+function relayout(){
+  const cx=root.x, cy=root.y;
+  const n=root.children.length||1;
+  root.children.forEach((b,i)=>{
+    layoutBranch(b,(i/n)*Math.PI*2-Math.PI/2,cx,cy);
   });
-  if(drag){ const r=drag.getBoundingClientRect(); centers.push({x:r.left+r.width/2,y:r.top+r.height/2}); }
-  return centers;
 }
-
-let time=0;
-// ________ ELASTIC SPRING WEB ________
-// Every connection (auto web AND manual links) has a bead at its middle.
-// Grab any bead and pull it in ANY direction — the line bends elastically (u=along, off=side).
-let webGrab=null;         // {id, x, y} while dragging a bead
-let webLines=[];          // {id, x, y} bead screen positions for hit-testing
-const beadData={};        // per-line {u, off}
-
-// compute bead world screen point from (u, off) for a segment A->B
-function beadPoint(a,b,u,off){
-  const dx=b.x-a.x, dy=b.y-a.y;
-  const len=Math.hypot(dx,dy)||1;
-  const nx=-dy/len, ny=dx/len;
-  return {x:a.x+dx*u+nx*off, y:a.y+dy*u+ny*off};
-}
-// given a dragged bead position, recover (u, off)
-function beadDecompose(a,b,px,py){
-  const dx=b.x-a.x, dy=b.y-a.y;
-  const len=Math.hypot(dx,dy)||1;
-  const nx=-dy/len, ny=dx/len;
-  const u=Math.max(.12,Math.min(.88,((px-a.x)*dx+(py-a.y)*dy)/(len*len)));
-  const off=(px-a.x)*nx+(py-a.y)*ny;
-  return {u, off};
-}
-
-function drawElasticLine(x1,y1,cx,cy,x2,y2,color,w,shadow){
-  wctx.strokeStyle=color;
-  wctx.lineWidth=w;
-  if(shadow){ wctx.shadowColor=shadow; wctx.shadowBlur=12; }
-  wctx.beginPath();
-  wctx.moveTo(x1,y1);
-  wctx.quadraticCurveTo(cx,cy,x2,y2);
-  wctx.stroke();
-  if(shadow){ wctx.shadowBlur=0; wctx.shadowColor='transparent'; }
-}
-function beadPos(a,b,u){
-  return {x:a.x+(b.x-a.x)*u, y:a.y+(b.y-a.y)*u};
-}
-function drawWeb(){
-  time+=.014;
-  wctx.clearRect(0,0,WW,WH);
-  const cards=getCards();
-  const cardById={};
-  cards.forEach(c=>cardById[c.id]=c);
-  const nodes=getAnchors();
-  webLines=[];
-
-  // Unified elastic web: every connection is A--(bead)--B. Auto edges + manual links.
-  // Build edge list: auto proximity (all pairs within MAXDIST) plus manual links.
-  const edges=[];
-  const MAXDIST=2000;
-  for(let i=0;i<nodes.length;i++){
-    for(let j=i+1;j<nodes.length;j++){
-      const d=Math.hypot(nodes[i].x-nodes[j].x,nodes[i].y-nodes[j].y);
-      if(d<MAXDIST && d>10){
-        edges.push({a:nodes[i],b:nodes[j],id:"n"+i+"_"+j,manual:false});
-      }
-    }
+function allNodes(){ const out=[]; function walk(n){out.push(n);(n.children||[]).forEach(walk);} walk(root); return out; }
+function render(){
+  if(root) relayout();
+  nodes=allNodes();
+  const lines=[];
+  function walk(n){
+    (n.children||[]).forEach(c=>{ lines.push([n,c]); walk(c); });
   }
-  links.forEach(link=>{
-    const a=cardById[link[0]], b=cardById[link[1]];
-    if(!a&&!b) return;
-    if(a&&b) edges.push({a,b,id:link[0]+"_"+link[1],manual:true});
+  walk(root);
+  let s="";
+  lines.forEach(([a,b])=>{
+    const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+    const dx=b.x-a.x, dy=b.y-a.y; const len=Math.hypot(dx,dy)||1;
+    const nx=-dy/len, ny=dx/len;
+    const off=Math.max(10,Math.min(26,len*.12));
+    const c1x=mx-nx*off,c1y=my-ny*off, c2x=mx+nx*off,c2y=my+ny*off;
+    const col=a.kind==="root"||b.kind==="root"?"#e0a800":(a.kind==="branch"||b.kind==="branch"?"#0aa5c9":"#7aa6ef");
+    s+=`<path d="M${a.x},${a.y} C${c1x},${c1y} ${c2x},${c2y} ${b.x},${b.y}" fill="none" stroke="${col}" stroke-width="${a.kind==='root'||b.kind==='root'?3:2}" opacity=".85"/>`;
   });
-
-  edges.forEach(edge=>{
-    const a=edge.a, b=edge.b, id=edge.id;
-    // bead state
-    if(!beadData[id]) beadData[id]={u:.5,off:0};
-    let bx,by, active=false;
-    if(webGrab && webGrab.id===id){
-      bx=webGrab.x; by=webGrab.y; active=true;
-    } else {
-      const bp=beadPoint(a,b,beadData[id].u,beadData[id].off);
-      bx=bp.x; by=bp.y;
-    }
-    // draw two springy segments around the bead (elastic sag)
-    const d=Math.hypot(b.x-a.x,b.y-a.y)||1;
-    const color=edge.manual
-      ? `rgba(255,220,120,${.75+.2*Math.sin(time*3+id.length)})`
-      : `rgba(190,205,255,${.7+.15*Math.sin(time*2+id.length)})`;
-    const wig=4*Math.sin(time*1.2+id.length);
-    const W=edge.manual?(active?4.5:3.5):Math.min(5,3+d/120);
-    // underlay glow
-    wctx.strokeStyle=color; wctx.lineWidth=W+5;
-    wctx.shadowColor=edge.manual?"rgba(255,220,120,.8)":"rgba(130,170,255,.8)";
-    wctx.shadowBlur=16;
-    wctx.beginPath();
-    wctx.moveTo(a.x,a.y);
-    wctx.quadraticCurveTo((a.x+bx)/2,(a.y+by)/2+wig,bx,by);
-    wctx.lineTo((bx+b.x)/2,(by+b.y)/2-wig);
-    wctx.lineTo(b.x,b.y);
-    wctx.stroke();
-    wctx.shadowBlur=0; wctx.shadowColor="transparent";
-    // bright core
-    wctx.strokeStyle=edge.manual?`rgba(255,245,200,.95)`:`rgba(255,255,255,.9)`;
-    wctx.lineWidth=W;
-    wctx.beginPath();
-    wctx.moveTo(a.x,a.y);
-    wctx.quadraticCurveTo((a.x+bx)/2,(a.y+by)/2+wig,bx,by);
-    wctx.lineTo((bx+b.x)/2,(by+b.y)/2-wig);
-    wctx.lineTo(b.x,b.y);
-    wctx.stroke();
-    // traveling pulse dot
-    const t=(time*.5+id.length)%1;
-    if(t<.5){
-      const partX=a.x+(bx-a.x)*t*2, partY=a.y+(by-a.y)*t*2;
-      wctx.fillStyle='#fff'; wctx.shadowColor='#fff'; wctx.shadowBlur=8;
-      wctx.beginPath(); wctx.arc(partX,partY,3.5,0,7); wctx.fill();
-    } else {
-      const partX=bx+(b.x-bx)*(t-.5)*2, partY=by+(b.y-by)*(t-.5)*2;
-      wctx.fillStyle='#fff'; wctx.shadowColor='#fff'; wctx.shadowBlur=8;
-      wctx.beginPath(); wctx.arc(partX,partY,3.5,0,7); wctx.fill();
-    }
-    wctx.shadowBlur=0;
-    // draggable handle on EVERY edge midpoint (even auto edges)
-    wctx.fillStyle= active?"#fff":"rgba(255,255,255,.95)";
-    wctx.strokeStyle=edge.manual?"rgba(120,200,255,.9)":"rgba(220,235,255,.6)";
-    wctx.lineWidth=1.5;
-    wctx.beginPath(); wctx.arc(bx,by,5.5,0,7); wctx.fill(); wctx.stroke();
-    webLines.push({id, x:bx, y:by, manual:edge.manual});
-  });
-
-  // bright nodes on cards
-  for(const n of nodes){
-    const g = wctx.createRadialGradient(n.x,n.y,0,n.x,n.y,20);
-    g.addColorStop(0,"rgba(255,255,255,1)"); g.addColorStop(1,"rgba(255,255,255,0)");
-    wctx.fillStyle=g;
-    wctx.beginPath(); wctx.arc(n.x,n.y,16,0,7); wctx.fill();
-    wctx.fillStyle="#fff"; wctx.beginPath(); wctx.arc(n.x,n.y,3,0,7); wctx.fill();
-  }
-  requestAnimationFrame(drawWeb);
-}
-requestAnimationFrame(drawWeb);
-
-// ============ infinite canvas: pan & zoom ============
-let zoom=1, panX=0, panY=0;
-const MIN=0.25, MAX=3;
-const zPct=$("#zPct");
-function applyView(){
-  world.style.transform=`translate(${panX}px,${panY}px) scale(${zoom})`;
-  zPct.textContent=Math.round(zoom*100)+"%";
-  saveView();
-}
-let viewTimer=null;
-function saveView(){
-  clearTimeout(viewTimer);
-  viewTimer=setTimeout(()=>{ try{ localStorage.setItem(chronoKey("view"), JSON.stringify({zoom,panX,panY})); }catch(e){} },300);
-}
-function loadView(){
-  try{
-    const raw=localStorage.getItem(chronoKey("view"));
-    if(raw){ const v=JSON.parse(raw); zoom=v.zoom||zoom; panX=v.panX??panX; panY=v.panY??panY; }
-  }catch(e){}
-}
-function viewX(vx){ return (vx - panX)/zoom; }   // screen->world
-function viewY(vy){ return (vy - panY)/zoom; }
-function screenOfWorld(wx,wy){ return {x:wx*zoom+panX, y:wy*zoom+panY}; }
-function zoomAt(fz, cx, cy){
-  const wx=viewX(cx), wy=viewY(cy);
-  zoom=Math.min(MAX, Math.max(MIN, fz));
-  panX = cx - wx*zoom;
-  panY = cy - wy*zoom;
+  svg.setAttribute("width",innerWidth*2);svg.setAttribute("height",innerHeight*2);
+  svg.innerHTML=s;
+  const frag=document.createDocumentFragment();
+  nodes.forEach(n=>{ frag.appendChild(nodeEl(n)); });
+  world.querySelectorAll(".node").forEach(x=>x.remove());
+  world.insertBefore(frag,svg);
   applyView();
 }
-function zoomBy(delta, cx, cy){
-  const nz = zoom * Math.pow(1.15, delta);
-  zoomAt(nz, cx, cy);
-}
-function resetView(){
-  zoom=1;
-  if(events.length){
-    let sx=0, sy=0;
-    events.forEach(e=>{sx+=e.px??e.x; sy+=e.py??e.y;});
-    panX = innerWidth/2 - sx/events.length;
-    panY = innerHeight/2 - sy/events.length;
-  } else { panX=0; panY=0; }
-  applyView();
-}
-$("#zIn").addEventListener("click", e=>{world.classList.add("smooth"); setTimeout(()=>world.classList.remove("smooth"),400); zoomBy(1, innerWidth/2, innerHeight/2);});
-$("#zOut").addEventListener("click", e=>{world.classList.add("smooth"); setTimeout(()=>world.classList.remove("smooth"),400); zoomBy(-1, innerWidth/2, innerHeight/2);});
-$("#resetView").addEventListener("click", ()=>{world.classList.add("smooth"); setTimeout(()=>world.classList.remove("smooth"),500); resetView();});
-
-// ============ header status buttons (Завершено / Не завершено) ============
-let activeStatusId=null; // id of card whose status the header buttons reflect
-const doneBtn=$("#doneBtn"), undoneBtn=$("#undoneBtn");
-function refreshStatusUI(){
-  const e=activeStatusId!==null?events.find(x=>x.id===activeStatusId):null;
-  const done=!!(e&&e.done);
-  doneBtn.classList.toggle("on", done);
-  undoneBtn.classList.toggle("on", !done);
-  doneBtn.querySelector(".led").style.display="";
-  undoneBtn.querySelector(".led").style.display="";
-  if(!e){ doneBtn.classList.remove("on"); undoneBtn.classList.remove("on"); }
-}
-function setActiveStatus(id){
-  activeStatusId=id;
-  refreshStatusUI();
-}
-doneBtn.addEventListener("click", ()=>{
-  if(activeStatusId===null) return;
-  const e=events.find(x=>x.id===activeStatusId);
-  if(e) setCardStatus(e,true);
-});
-undoneBtn.addEventListener("click", ()=>{
-  if(activeStatusId===null) return;
-  const e=events.find(x=>x.id===activeStatusId);
-  if(e) setCardStatus(e,false);
-});
-function setCardStatus(e,done){
-  e.done=done;
-  syncCardStatus(e);
-  save();
-  refreshStatusUI();
-  flashMsg(done?"Отмечено как завершено":"Отмечено как не завершено");
-}
-// status shown ONLY via the small circle on the card head (no card color change)
-function applyCardStatusClass(el,e){
-  el.classList.remove("st-done","st-undone");
-}
-function syncCardStatus(e){
-  const card=document.querySelector('#world .card[data-id="'+e.id+'"]');
-  if(card){
-    applyCardStatusClass(card,e);
-    setCardLed(card,e);
-  }
-}
-function setCardLed(card,e){
-  card.querySelectorAll(".head .statusLamp").forEach(x=>x.remove());
-  if(e.done===undefined) return;
-  const lamp=document.createElement("span");
-  lamp.className="statusLamp "+(e.done?"done":"undone");
-  const head=card.querySelector(".head");
-  head.insertBefore(lamp, head.querySelector(".rm"));
-}
-
-// pan with middle-mouse or drag on empty background; also grab web beads
-let pspanning=false, psx=0, psy=0, ppx=0, ppy=0;
-let beadDown=null, beadDownXY=null;
-function findLinkHandleAt(x,y){
-  let best=null, bestd=1e9;
-  webLines.forEach(l=>{
-    const d=Math.hypot(x-l.x,y-l.y);
-    if(d<bestd){ bestd=d; best=l; }
+function nodeEl(n){
+  const el=document.createElement("div");
+  el.className="node "+n.kind; el.dataset.id=n.id;
+  el.style.left=n.x+"px"; el.style.top=n.y+"px";
+  const chip=document.createElement("div"); chip.className="chip";
+  el.textContent="";
+  const label=document.createElement("div"); label.textContent=n.txt;
+  el.appendChild(label);
+  // handlers
+  makeDrag(el,n);
+  el.addEventListener("dblclick",()=>{
+    const nn=prompt("Переименовать:",n.txt); if(nn!==null&&nn.trim()){n.txt=nn.trim();saveAll();render();}
   });
-  if(best && bestd<40) return best;
-  return null;
-}
-board.addEventListener("pointerdown", ev=>{
-  if(ev.button===1 || ev.target===board || ev.target===world){
-    if(ev.target.closest(".card")) return;
-    const handle=findLinkHandleAt(ev.clientX,ev.clientY);
-    if(handle){
-      // grab the web bead and pull it
-      ev.preventDefault();
-      webGrab={id:handle.lk, x:ev.clientX, y:ev.clientY};
-      beadDown=handle.lk; beadDownXY={x:ev.clientX,y:ev.clientY};
-      board.classList.add("panning");
-      board.setPointerCapture(ev.pointerId);
-      return;
-    }
-    pspanning=true; psx=ev.clientX; psy=ev.clientY; ppx=panX; ppy=panY;
-    board.classList.add("panning");
-    board.setPointerCapture(ev.pointerId);
-    ev.preventDefault();
-  }
-});
-board.addEventListener("pointermove", ev=>{
-  if(webGrab){
-    // drag bead: recompute u/off relative to its endpoints
-    const isAuto=webGrab.id.charAt(0)==="n";
-    let A,B;
-    if(isAuto){
-      const m=webGrab.id.match(/^n(\d+)_(\d+)$/);
-      const ns=getAnchors();
-      A=ns[+m[1]]; B=ns[+m[2]];
-    } else {
-      const cardById={};
-      getCards().forEach(c=>cardById[c.id]=c);
-      const [ia,ib]=webGrab.id.split("_").map(Number);
-      A=cardById[ia]; B=cardById[ib];
-    }
-    if(A&&B){
-      const dec=beadDecompose(A,B,ev.clientX,ev.clientY);
-      beadData[webGrab.id].u=Math.max(.12,Math.min(.88,dec.u));
-      beadData[webGrab.id].off=dec.off;
-    }
-    webGrab.x=ev.clientX; webGrab.y=ev.clientY;
-    save();
-    return;
-  }
-  if(!pspanning) return;
-  panX=ppx+(ev.clientX-psx);
-  panY=ppy+(ev.clientY-psy);
-  applyView();
-});
-board.addEventListener("pointerup", ev=>{
-  if(beadDown){
-    // click (no movement ~<6px) on a MANUAL bead removes that web thread
-    const moved=Math.hypot(ev.clientX-beadDownXY.x,ev.clientY-beadDownXY.y);
-    if(moved<6 && beadDown && !beadDown.startsWith("n")){
-      const [ia,ib]=beadDown.split("_").map(Number);
-      removeLink(ia,ib);
-      flashMsg("Связь убрана");
-    } else if(moved<6 && beadDown && beadDown.startsWith("n")){
-      // click on an auto-line: nothing destructive
-    } else {
-      save();
-    }
-  }
-  beadDown=null; beadDownXY=null;
-  webGrab=null; endPan();
-});
-board.addEventListener("pointercancel", ()=>{ beadDown=null; webGrab=null; endPan(); });
-function endPan(){ pspanning=false; webGrab=null; board.classList.remove("panning"); }
-
-// wheel zoom centered on cursor
-board.addEventListener("wheel", ev=>{
-  ev.preventDefault();
-  zoomBy(-ev.deltaY>0?1:-1, ev.clientX, ev.clientY);
-}, {passive:false});
-
-// ============ card creation & dragging ============
-const monthsRu=new Array(12).fill(0)
-  .map((_,i)=>["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"][i]);
-const monthsShort=["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
-
-function timeLabel(e){
-  const md = ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"][e.mo-1];
-  let t="";
-  if(e.h!==undefined || e.mi!==undefined || e.sec!==undefined){
-    t = `${String(e.h??0).padStart(2,"0")}:${String(e.mi??0).padStart(2,"0")}:${String(e.sec??0).padStart(2,"0")}`;
-  }
-  return `<div class="dt">${e.y}.${String(e.mo).padStart(2,"0")}.${String(e.d).padStart(2,"0")}${t?' <span class="t">'+t+'</span>':''}</div>`;
-}
-
-function renderCard(e){
-  const el = document.createElement("div");
-  el.className="card";
-  el.dataset.id = e.id;
-  applyCardStatusClass(el, e);
-  if(e.color) el.classList.add("themed","c-"+e.color);
-  const photos = (e.photos||[]).map(src=>`<img src="${src}" alt="фото">`).join("");
-  el.innerHTML = `
-    <span class="glowAccent"></span>
-    <div class="head">
-      <span class="dot"></span>
-      ${timeLabel(e)}
-      <span class="linkport" title="Потяните, чтобы связать"></span>
-      <button class="rm" title="Удалить">✕</button>
-    </div>
-    <div class="colorbar"></div>
-    <div class="tabs">
-      <button class="tab on" data-tab="main">Таблица</button>
-      <button class="tab" data-tab="data">Данные</button>
-      <button class="tab" data-tab="note">Заметки</button>
-    </div>
-    <div class="cardSocials"></div>
-    <div class="body">
-      <div class="tabpage main on"></div>
-      <div class="tabpage data"></div>
-      <div class="tabpage note"></div>
-    </div>`;
-  const mainP=el.querySelector(".tabpage.main");
-  const dataP=el.querySelector(".tabpage.data");
-  const noteP=el.querySelector(".tabpage.note");
-  // main page — instant-edit table
-  const t=document.createElement("div"); t.className="title"; t.contentEditable="true"; t.spellcheck=false;
-  const d=document.createElement("div"); d.className="desc"; d.contentEditable="true"; d.spellcheck=false;
-  const ph=document.createElement("div"); ph.className="photos";
-  const kvWrap=document.createElement("div"); kvWrap.className="kvlist";
-  const addRow=document.createElement("div"); addRow.className="addrow";
-  const addInp=document.createElement("input"); addInp.type="text"; addInp.placeholder="＋ Впишите сюда новый пункт…"; addInp.setAttribute("aria-label","Новый пункт");
-  const addBtn2=document.createElement("button"); addBtn2.textContent="＋";
-  addRow.append(addInp,addBtn2);
-  mainP.append(t,d,ph,kvWrap,addRow);
-  t.textContent=e.title||"Заголовок…";
-  d.textContent=e.desc||"";
-  d.style.display=e.desc?"block":"none";
-  let saveTimer=null;
-  function autosave(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ e.title=t.innerText.trim()||""; e.desc=d.innerText.trim()||""; save(); },400); }
-  t.addEventListener("input",autosave);
-  d.addEventListener("input",autosave);
-  // render existing key-value entries
-  (e.rows||[]).forEach(r=>addKvRow(kvWrap,e,r));
-  addBtn2.addEventListener("click",()=>{
-    const v=addInp.value.trim(); if(!v) return;
-    e.rows=(e.rows||[]);
-    e.rows.push({k:"",v});
-    addInp.value=""; save();
-    addKvRow(kvWrap,e,e.rows[e.rows.length-1]);
-  });
-  addInp.addEventListener("keydown",ev=>{ if(ev.key==="Enter"){ ev.preventDefault(); addBtn2.click(); }});
-  // data page
-  const subBox=document.createElement("div"); subBox.className="subs";
-  dataP.appendChild(subBox);
-  // note page
-  const notesBox=document.createElement("div"); notesBox.className="notes";
-  noteP.appendChild(notesBox);
-  el.querySelector(".title").textContent=e.title;
-  // render inline color swatches
-  const bar=el.querySelector(".colorbar");
-  const wnames=[["","Белый"],["red","Красный"],["green","Зелёный"],["gray","Серый"],["purple","Фиолетовый"],["yellow","Жёлтый"]];
-  wnames.forEach(w=>{
-    const s=document.createElement("span");
-    s.className="swatch "+(w[0]?"c-"+w[0]:"base")+(e.color===w[0]?" sel":"");
-    if(!w[0]) s.style.background="#eee";
-    s.title=w[1];
-    s.addEventListener("click", ev=>{
-      ev.stopPropagation();
-      e.color=w[0]||null;
-      el.classList.toggle("themed", !!e.color);
-      if(e.color) el.classList.add("c-"+e.color); else ["c-red","c-green","c-gray","c-purple","c-yellow"].forEach(c=>el.classList.remove(c));
-      bar.querySelectorAll(".swatch").forEach(x=>x.classList.remove("sel"));
-      s.classList.add("sel");
-      save();
+  const ops=document.createElement("div"); ops.className="ops";
+  if(n.kind!=="leaf"){
+    const a=document.createElement("button"); a.className="add"; a.textContent="＋"; a.title="Добавить узел";
+    a.addEventListener("click",ev=>{ev.stopPropagation();
+      const t=prompt("Название нового узла:","Идея");
+      if(t&&t.trim()){ n.children=n.children||[]; n.children.push({id:nid(),kind:"leaf",txt:t.trim()}); saveAll(); render(); }
     });
-    bar.appendChild(s);
+    ops.appendChild(a);
+  }
+  const del=document.createElement("button"); del.className="del"; del.textContent="✕"; del.title="Удалить узел";
+  del.addEventListener("click",ev=>{ev.stopPropagation();
+    if(!confirm("Удалить узел?")) return;
+    removeNode(el.dataset.id); saveAll(); render();
   });
-  if(e.photos && e.photos.length){ ph.innerHTML = photos; }
-  else ph.style.display="none";
-  // social network icons on the card
-  const socBox=el.querySelector(".cardSocials");
-  socPickedArr(e.social).forEach(id=>{
-    const s=SOCIALS.find(x=>x.id===id);
-    if(s){
-      const ic=document.createElement("span");
-      ic.className="csoc bg-"+s.id; ic.title=s.title; ic.innerHTML=s.svg;
-      socBox.appendChild(ic);
-    }
-  });
-  if(!socBox.children.length) socBox.style.display="none";
-  // profile sub-fields
-  const subRows=[
-    ["Номер",e.num],["Адрес",e.addr],["Имя",e.first],["Фамилия",e.last],
-    ["Отчество",e.patr],["Семейное положение",e.fam],["Привычки",e.habits],
-    ["Черты характера",e.traits],["Хобби",e.hobby],["Соц.сети",e.social],["Учебное заведение",e.school],["Работа",e.work]
-  ];
-  subRows.forEach(function(kv){
-    const k=kv[0], v=kv[1];
-    if(v){ const row=document.createElement("div"); row.className="subrow";
-      const lab=document.createElement("span"); lab.className="k"; lab.textContent=k+": ";
-      row.appendChild(lab); row.appendChild(document.createTextNode(v));
-      subBox.appendChild(row);
-    }
-  });
-  if(e.subs && e.subs.length){ subBox.appendChild(extraTables(e.subs)); }
-  if(e.notes){ notesBox.textContent=e.notes; notesBox.style.display="block"; }
-  else notesBox.style.display="none";
-  if(!e.first&&!e.addr&&!e.num&&!e.last&&!e.patr&&!e.fam&&!e.habits&&!e.traits&&!e.hobby&&!e.social&&!e.school&&!e.work&&!e.subs) dataP.style.display="none";
-  if(e.px===undefined && e.x!==undefined){ e.px=e.x; e.py=e.y; }
-  if(e.px===undefined) e.px = viewX(40) + Math.random()*innerWidth*.5 - 120;
-  if(e.py===undefined) e.py = viewY(70) + Math.random()*innerHeight*.4 - 120;
-  el.style.left = e.px + "px";
-  el.style.top  = e.py + "px";
-  el.querySelector(".rm").addEventListener("click", ev=>{
-    ev.stopPropagation();
-    el.classList.add("dragging");
-    el.style.transition="transform .3s, opacity .3s";
-    el.style.transform="scale(.4)";
-    el.style.opacity="0";
-    setTimeout(()=>{ el.remove(); events=events.filter(x=>x.id!==e.id); links=links.filter(l=>l[0]!==e.id&&l[1]!==e.id); save(); saveLinks(); refreshEmpty(); },300);
-  });
-  makeDraggable(el, e);
-  // tilt the card toward the cursor on hover
-  el.addEventListener("mousemove", function(ev){
-    const r=el.getBoundingClientRect();
-    const cx=r.left+r.width/2, cy=r.top+r.height/2;
-    const dx=ev.clientX-cx, dy=ev.clientY-cy;
-    const maxRot=8, maxShift=8;
-    // normalize to -1..1
-    const nx=Math.max(-1,Math.min(1,dx/(r.width/2)));
-    const ny=Math.max(-1,Math.min(1,dy/(r.height/2)));
-    el.style.setProperty("--ty", (ny*maxShift)+"px");
-    el.style.setProperty("--rot", (-nx*maxRot)+"deg");
-    // slight push toward cursor: shift x a bit in cursor direction offset
-    el.style.setProperty("--tx", (nx*-3)+"px");
-    el.classList.add("hovering");
-  });
-  el.addEventListener("mouseleave", function(){
-    el.classList.remove("hovering");
-    el.style.setProperty("--tx","0px");
-    el.style.setProperty("--ty","0px");
-    el.style.setProperty("--rot","0deg");
-  });
-  // reflect status in the head dot
-  syncCardStatus(e);
-  // click focuses the quick-edit fields right on the card
-  el.addEventListener("click", ev=>{
-    if(ev.target.closest(".rm")||ev.target.closest(".linkport")||ev.target.closest(".swatch")) return;
-    if(linkMode) return;
-    if(dragMoved) return;
-    setActiveStatus(e.id);
-    const tt=el.querySelector(".title");
-    if(tt){ tt.focus(); }
-  });
-  // double-click opens full details / edit
-  // tab switching within the card
-  el.querySelectorAll(".tab").forEach(bt=>bt.addEventListener("click", ev=>{
-    ev.stopPropagation();
-    el.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
-    bt.classList.add("on");
-    const name=bt.dataset.tab;
-    el.querySelectorAll(".tabpage").forEach(p=>p.classList.remove("on"));
-    el.querySelector(".tabpage."+name).classList.add("on");
-  }));
-  world.appendChild(el);
+  ops.appendChild(del);
+  el.appendChild(ops);
   return el;
 }
-// fast key/value row under a card
-function addKvRow(wrap,e,row){
-  const line=document.createElement("div"); line.className="kvrow";
-  const k=document.createElement("input"); k.type="text"; k.placeholder="ключ"; k.value=row.k||"";
-  const v=document.createElement("input"); v.type="text"; k.setAttribute("aria-label","ключ"); v.setAttribute("aria-label","значение"); v.placeholder="значение"; v.value=row.v||"";
-  const del=document.createElement("button"); del.textContent="✕"; del.title="Удалить пункт";
-  let t2=null;
-  function sv(){ clearTimeout(t2); t2=setTimeout(()=>{ row.k=k.value.trim(); row.v=v.value.trim(); save(); },400); }
-  k.addEventListener("input",sv); v.addEventListener("input",sv);
-  del.addEventListener("click",()=>{ line.remove(); e.rows=(e.rows||[]).filter(x=>x!==row); save(); });
-  line.append(k,v,del); wrap.appendChild(line);
+function removeNode(id){
+  function walk(n){ n.children=(n.children||[]).filter(c=>c.id!==id); n.children.forEach(walk); }
+  if(root.id===id) return; walk(root);
 }
-
-// render extra user-added sub-tables into a page
-function extraTables(subs){
-  const wrap=document.createElement("div"); wrap.className="extraTables";
-  subs.forEach(sub=>{
-    const card=document.createElement("div"); card.className="extraTable";
-    if(sub.title){ const h=document.createElement("div"); h.className="et-title"; h.textContent=sub.title; card.appendChild(h); }
-    const ul=document.createElement("ul");
-    (sub.items||[]).forEach(it=>{ const li=document.createElement("li"); li.textContent=it; ul.appendChild(li); });
-    card.appendChild(ul);
-    wrap.appendChild(card);
+function makeDrag(el,n){
+  let sx,sy,ox,oy,d=false;
+  el.addEventListener("pointerdown",ev=>{
+    if(ev.target.closest(".ops"))return;
+    d=true;sx=ev.clientX;sy=ev.clientY;ox=n.x;oy=n.y;
+    el.classList.add("dragging"); el.setPointerCapture(ev.pointerId);
   });
-  return wrap;
-}
-
-// ============ manual link mode ============
-let linkMode=false, linkFrom=null, hoverLinkInWorld=null, dragMoved=false;
-const linkBtn=$("#linkBtn");
-const linkTip=document.createElement("div");
-linkTip.id="linkTip";
-document.body.appendChild(linkTip);
-linkBtn.addEventListener("click", ()=>{
-  linkMode=!linkMode;
-  linkBtn.classList.toggle("on", linkMode);
-  board.classList.toggle("linkmode", linkMode);
-  $$("#world .card").forEach(c=>c.classList.remove("pick"));
-  linkFrom=null;
-  if(linkMode) linkTip.textContent="Кликните первую карточку";
-  else linkTip.classList.remove("show");
-});
-function setTip(t){ if(linkMode){ linkTip.textContent=t; linkTip.classList.add("show"); } }
-function exitLink(){ linkMode=false; linkBtn.classList.remove("on"); board.classList.remove("linkmode"); linkFrom=null; linkTip.classList.remove("show"); }
-
-// ---- clear all web threads ----
-const webClearBtn=$("#webClear");
-webClearBtn.addEventListener("click", ()=>{
-  links=[];
-  saveLinks();
-  flashMsg("Паутина убрана");
-});
-
-// ---- drag-a-web-thread between cards, using an overlay canvas line ----
-let linkLine=null;
-function startLinkDrag(from){
-  removeLinkLine();
-  linkLine=document.createElement("canvas");
-  linkLine.width=innerWidth; linkLine.height=innerHeight;
-  linkLine.style.cssText="position:fixed;inset:0;z-index:55;pointer-events:none";
-  document.body.appendChild(linkLine);
-  linkLine._from=from;
-}
-function linkLineCtx(){ return linkLine?linkLine.getContext("2d"):null; }
-function moveLinkDrag(x,y){
-  if(!linkLine) return;
-  const c=linkLineCtx();
-  c.clearRect(0,0,linkLine.width,linkLine.height);
-  const f=linkLine._from;
-  c.strokeStyle="rgba(255,255,150,.8)";
-  c.lineWidth=3; c.shadowColor="rgba(255,255,120,.9)"; c.shadowBlur=12;
-  c.setLineDash([8,8]); c.lineDashOffset=-(performance.now()/30%16);
-  c.beginPath(); c.moveTo(f.x,f.y); c.lineTo(x,y); c.stroke();
-  c.setLineDash([]);
-  c.fillStyle="#fff"; c.beginPath(); c.arc(x,y,4,0,7); c.fill();
-}
-function removeLinkLine(){ if(linkLine){ linkLine.remove(); linkLine=null; } }
-function endLinkDrag(x,y,srcEl,srcData){
-  removeLinkLine();
-  // find the card under the cursor
-  const over=document.elementFromPoint(x,y);
-  const targetCard=over?over.closest(".card"):null;
-  if(targetCard && targetCard!==srcEl){
-    const tid=parseFloat(targetCard.dataset.id), sid=srcData.id;
-    if(hasLink(sid,tid)) removeLink(sid,tid); else addLink(sid,tid);
-  }
-}
-
-function makeDraggable(el, data){
-  let sx,sy,ox,oy,drag=false, moved=false;
-  const port=el.querySelector(".linkport");
-  let linkDrag=false, lstart={x:0,y:0};
-  // drag from the link port: pull a web thread to another card
-  port.addEventListener("pointerdown", ev=>{
-    ev.stopPropagation(); ev.preventDefault();
-    const r=el.getBoundingClientRect();
-    lstart={x:r.left+r.width/2,y:r.top+r.height/2};
-    linkDrag=true;
-    port.setPointerCapture(ev.pointerId);
-    startLinkDrag(lstart);
+  el.addEventListener("pointermove",ev=>{ if(!d)return;
+    n.x=ox+(ev.clientX-sx)/zoom; n.y=oy+(ev.clientY-sy)/zoom;
+    el.style.left=n.x+"px"; el.style.top=n.y+"px"; applyView(true);
   });
-  port.addEventListener("pointermove", ev=>{
-    if(!linkDrag) return;
-    moveLinkDrag(ev.clientX,ev.clientY);
-  });
-  port.addEventListener("pointerup", ev=>{
-    if(!linkDrag) return;
-    linkDrag=false; endLinkDrag(ev.clientX,ev.clientY,el,data);
-  });
-  port.addEventListener("pointercancel", ()=>{ linkDrag=false; removeLinkLine(); });
-
-  el.addEventListener("pointerdown", ev=>{
-    if(ev.target.closest(".rm")||ev.target.closest(".linkport")) return;
-    ev.stopPropagation();
-    if(linkMode){
-      ev.preventDefault();
-      return;
-    }
-    drag=true; moved=false; sx=ev.clientX; sy=ev.clientY;
-    ox=parseFloat(el.style.left); oy=parseFloat(el.style.top);
-    el.classList.add("dragging");
-    el.setPointerCapture(ev.pointerId);
-  });
-  el.addEventListener("pointermove", ev=>{
-    if(!linkMode){
-      if(!drag) return;
-      const dx=(ev.clientX-sx)/zoom, dy=(ev.clientY-sy)/zoom;
-      if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>3) moved=true, dragMoved=true;
-      el.style.left=(ox+dx)+"px";
-      el.style.top=(oy+dy)+"px";
-    }
-  });
-  el.addEventListener("pointerup", ev=>{
-    if(linkMode) return; // handled by click
-    if(!drag) return;
-    drag=false; el.classList.remove("dragging");
-    data.px=parseFloat(el.style.left); data.py=parseFloat(el.style.top);
-    save();
-    setTimeout(()=>{ dragMoved=false; },0);
-  });
-  el.addEventListener("pointercancel", ()=>el.classList.remove("dragging"));
-  // manual link selection happens on click (fires for real user clicks reliably)
-  el.addEventListener("click", ev=>{
-    if(!linkMode) return;
-    ev.stopPropagation();
-    const id=parseFloat(el.dataset.id);
-    if(!linkFrom){
-      linkFrom=id;
-      $$("#world .card").forEach(c=>c.classList.remove("pick"));
-      el.classList.add("pick");
-      setTip((data.title||"Событие")+": теперь выберите вторую карточку");
-    } else {
-      if(linkFrom===id){
-        linkFrom=null; $$("#world .card").forEach(c=>c.classList.remove("pick"));
-        setTip("Кликните первую карточку"); return;
-      }
-      if(hasLink(linkFrom,id)){
-        removeLink(linkFrom,id);
-        setTip("Связь удалена. Кликните первую карточку");
-      } else {
-        addLink(linkFrom,id);
-        setTip("Связь добавлена. Кликните первую карточку");
-      }
-      linkFrom=null;
-      $$("#world .card").forEach(c=>c.classList.remove("pick"));
-    }
-  });
+  el.addEventListener("pointerup",()=>{ if(!d)return; d=false; el.classList.remove("dragging"); saveAll(); render(); });
 }
-// clicking empty space cancels the pending first pick
-board.addEventListener("pointerdown", ev=>{
-  if(!linkMode) return;
-  if(ev.target===board || ev.target===world){
-    if(linkFrom){
-      linkFrom=null;
-      $$("#world .card").forEach(c=>c.classList.remove("pick"));
-      setTip("Кликните первую карточку");
-    }
-  }
-});
-
-function save(){
-  try{ localStorage.setItem(chronoKey("events"), JSON.stringify(events)); }catch(e){}
+function applyView(keep){
+  world.style.transform=`translate(${panX}px,${panY}px) scale(${zoom})`;
+  $("#zp").textContent=Math.round(zoom*100)+"%";
 }
-function refreshEmpty(){ empty.style.display = events.length? "none":"flex"; }
+function viewX(vx){return (vx-panX)/zoom;} function viewY(vy){return (vy-panY)/zoom;}
+function zoomAt(fz,cx,cy){ const wx=viewX(cx),wy=viewY(cy); zoom=Math.max(.2,Math.min(3,fz)); panX=cx-wx*zoom; panY=cy-wy*zoom; applyView(); }
+// pan
+let ps=false,psx=0,psy=0,ppx=0,ppy=0;
+board.addEventListener("pointerdown",ev=>{ if(ev.target.closest(".node"))return; ps=true;psx=ev.clientX;psy=ev.clientY;ppx=panX;ppy=panY;board.classList.add("panning");board.setPointerCapture(ev.pointerId);});
+board.addEventListener("pointermove",ev=>{ if(!ps)return; panX=ppx+(ev.clientX-psx);panY=ppy+(ev.clientY-psy);applyView();});
+board.addEventListener("pointerup",()=>{ps=false;board.classList.remove("panning");});
+board.addEventListener("wheel",ev=>{ ev.preventDefault(); zoomAt(zoom*Math.pow(1.15,-Math.sign(ev.deltaY)),ev.clientX,ev.clientY); },{passive:false});
+$("#zIn").addEventListener("click",()=>zoomAt(zoom*1.2,innerWidth/2,innerHeight/2));
+$("#zOut").addEventListener("click",()=>zoomAt(zoom*.85,innerWidth/2,innerHeight/2));
+$("#fit").addEventListener("click",()=>{ zoom=1; panX=innerWidth/2-root.x; panY=innerHeight/2-root.y; applyView(); });
+$("#addBranch").addEventListener("click",()=>{ const t=prompt("Название ветви:","Новая ветвь"); if(t&&t.trim()){ root.children.push({id:nid(),kind:"branch",txt:t.trim(),children:[]}); saveAll(); render(); } });
+$("#titleInput").addEventListener("change",saveAll);
+addEventListener("resize",()=>{svg.setAttribute("width",innerWidth*2);svg.setAttribute("height",innerHeight*2);render();});
 
-// ============ modal date/time selector with animated list ============
-const modal = $("#modal"), slotList = $("#slotList");
-let selField=null, pending={};
-const FIELDS = [
-  {k:"y",  kind:"Год",  list:(st)=>years(st)},
-  {k:"mo", kind:"Месяц",list:(st)=>monthsList()},
-  {k:"d",  kind:"День", list:(st)=>days(st)},
-  {k:"h",  kind:"Часы", list:()=>range(0,23,"ч")},
-  {k:"mi", kind:"Минуты",list:()=>range(0,59,"мин")},
-  {k:"sec",kind:"Секунды",list:()=>range(0,59,"с")},
-];
-function years(s){ const y=[]; for(let i=s.y; i>=s.y-120; i--) y.push(i); return y; }
-function monthsList(){ const [a,b]="Октябрь,Ноябрь,Декабрь,".split(","); return monthsRu.map((m,i)=>({v:i+1,label:`${m}`})); }
-function days(s){
-  const dim=new Date(s.y, s.mo, 0).getDate();
-  return range(1,dim,"число");
-}
-function range(a,b,suf){ const arr=[]; for(let i=b;i>=a;i--) arr.push({v:i,label:`${i} ${suf}`}); return arr; }
-
-function currentSel(){ return FIELDS[selField]; }
-
-function openModal(){
-  const n=new Date();
-  pending = {y:n.getFullYear(), mo:n.getMonth()+1, d:n.getDate(), h:n.getHours(), mi:n.getMinutes(), sec:0, title:"", desc:"", color:"", photos:[]};
-  selField=0;
-  $$(".colorChooser .csw").forEach(b=>b.classList.toggle("sel", b.dataset.c===""));
-  subBuilder.innerHTML=""; subBuilders.length=0;
-  addSubBuild();
-  if(!$("#socPick").children.length) initSocPick();
-  else setSocPick([]);
-  buildSelectors();
-  renderList();
-  modal.classList.add("open");
-}
-function buildSelectors(){
-  const wrap = $("#selectors"); wrap.innerHTML="";
-  FIELDS.forEach((f,i)=>{
-    const slot=document.createElement("div");
-    slot.className="slot"+(i===selField?" active":"");
-    slot.innerHTML=`<div class="kind">${f.kind}</div><div class="num">${pad(pending[f.k])}</div><div class="sub">${sub(i)}</div>`;
-    slot.addEventListener("click", ()=>{ selField=i; buildSelectors(); renderList(); pulseSlot(slot); });
-    wrap.appendChild(slot);
-  });
-  function sub(i){
-    if(i===0) return "год";
-    if(i===1) return monthsShort[pending.mo-1];
-    if(i===2) return "число";
-    if(i===3) return "часы";
-    if(i===4) return "мин";
-    return "сек";
-  }
-}
-function pad(v){ return String(v).padStart(2,"0"); }
-function pulseSlot(el){ el.animate([{transform:"scale(1.08)"},{transform:"scale(1)"}],{duration:220,easing:"ease-out"}); }
-
-function renderList(){
-  slotList.innerHTML="";
-  const f = currentSel();
-  let items = f.list(pending);
-  if(f.k==="mo") items = monthsRu.map((m,i)=>({v:i+1,label:m}));
-  items.forEach(it=>{
-    const b=document.createElement("button");
-    const val = typeof it==="number"? it : it.v;
-    const label = typeof it==="number"? it : (it.label||val);
-    b.textContent = label + (f.k==="y"?" год":f.k==="d"?" число":"");
-    b.dataset.v = val;
-    if(val===pending[f.k]) b.style.background="#000", b.style.color="#fff";
-    b.addEventListener("click", ()=>{
-      pending[f.k]=val;
-      // if changed year/month, re-derive day limit and clamp
-      if(f.k==="mo"||f.k==="y"){
-        if(pending.y && pending.mo){
-          const dim=new Date(pending.y,pending.mo,0).getDate();
-          pending.d=Math.min(pending.d,dim);
-        }
-      }
-      buildSelectors(); renderList();
-    });
-    slotList.appendChild(b);
-  });
-}
-
-$("#addBtn").addEventListener("click", openModal);
-$("#cancelBtn").addEventListener("click", ()=>modal.classList.remove("open"));
-modal.addEventListener("click", e=>{ if(e.target===modal) modal.classList.remove("open"); });
-
-// photos
-const photoInput=$("#inPhoto"), previewBox=$("#preview");
-photoInput.addEventListener("change", ()=>{
-  Array.from(photoInput.files).forEach(file=>{
-    const rd=new FileReader();
-    rd.onload=ev=>{
-      pending.photos.push(ev.target.result);
-      addPreviewThumb(ev.target.result);
-    };
-    rd.readAsDataURL(file);
-  });
-});
-function addPreviewThumb(src){
-  const fig=document.createElement("figure");
-  const img=document.createElement("img"); img.src=src;
-  const rm=document.createElement("button"); rm.textContent="✕";
-  rm.addEventListener("click", ()=>{ fig.remove(); pending.photos=pending.photos.filter(x=>x!==src); });
-  fig.append(img,rm); previewBox.appendChild(fig);
-}
-$("#inTitle").addEventListener("input", e=>pending.title=e.target.value);
-$("#inDesc").addEventListener("input", e=>pending.desc=e.target.value);
-
-// ---- sub-table builder ----
-const subBuilder=$("#subBuilder");
-const subBuilders=[]; // each: {titleEl, rows:[]}
-
-// ---- social networks picker ----
-const SOCIALS=[
-  {id:"vk",title:"ВКонтакте",svg:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12.02 3.5C7.02 3.5 3.5 7.02 3.5 12.02v0c0 5 3.52 8.48 8.52 8.48h0c5 0 8.48-3.48 8.48-8.48v0C20.5 7.02 17.02 3.5 12.02 3.5h0zm3.99 12.18h-1.05c-.31 0-.42-.19-.75-.57-.6-2.24-2.04-3.4-2.28-3.4h-1.87c-.15 0-.17.06-.17.22v4.36c0 .4-.2.48-.51.48-1.3.05-2.47-.42-3.43-1.42-1.06-1.14-2-2.72-2.7-5.66.06 1.96.5 3.68 1.1 4.62.74 1.16 1.42 1.24 1.55 1.24.4 0 .61-.28.61-.83v-3.4c-.04-.69.3-1.02.9-1.02.44 0 .8.35 1.06.93l1.55 4.06c.06.2.16.2.25.2.12 0 .3-.09.37-.2.02-.16.16-1.26.34-2.12.11-.53.34-1.84.5-2.86.04-.2.08-.22.17-.22h1.03c.2 0 .24.15.24.26 0 .12-.1.66-.3 1.38-.5 1.9-.74 2.8-.66 3.2.24-.4.97-1.15 1.49-2 .53-.86.9-1.72 1.2-2.5.1-.2.24-.3.4-.3h1.05c.32 0 .48.12.4.4-.98 2.36-2.58 4.07-3.62 4.42h0zm7.59-8.08c.36.03.81.06 1.05.12.4.1.66.42.75.83.28 1.24.05 4.5-.84 7.44-.46 1.5-1.15 3-1.92 3.7-.66.6-1.32.72-2.32.78-.6.16-1.5.07-2.5.08-.34.03-.68-.1-.82-.44-.16-.4-.13-.95-.13-1.48v-.02c0-1.02-.06-1.9-.1-2.6-.24 1.3-1.86 2.24-2.8 2.98-.58.46-1.3.72-1.95.72-1.28 0-2.22-1.06-2.6-1.74-.5-.88-.44-1.86-.22-2.9.17-.78.58-1.7 1.05-2.4.6-.9 1.35-1.6 2.1-2.15.34-.25.84-.6 1.7-.1-.04.06-.06.1-.1.16-.5.78-.92 1.6-1.2 2.4-.54 1.56-.3 3.2.66 3.98.32.26.74.4 1.16.4.62 0 1.26-.3 1.82-.82.9-.84 1.82-2.18 2.2-4.05.02-.12.06-.22.06-.34 0-1.08-.74-1.72-1.54-1.72-.78 0-1.5.4-2.06 1.2-.2.28-.38.56-.56.84-.44-.46-.7-1-.7-1.56.12-1.5 1.6-2.4 3.06-2.4.4 0 .8.06 1.2.18 1.36.4 2.04 1.6 2.4 2.92.18.66.12 1.32.06 1.96-.02.37-.4.72-.75.72-.36 0-.6-.22-.66-.58-.03-.2 0-.4-.02-.6-.05-.24-.06-.5-.13-.76-.16-.54-.4-1.06-.8-1.44-.35-.34-.8-.6-1.32-.6-1.45 0-2.16 1.16-2.16 2.34 0 1.4 1.12 2.1 1.95 2.1.45 0 .86-.28 1.06-.7.06-.1.1-.18.2-.16.15.08.26.2.26.36-.06.9-.5 1.72-1.1 2.1-.5.32-1.05.5-1.66.48-.95-.03-1.86-.63-2.34-1.56-.35-.7-.4-1.4-.28-2.16.16-1.1.92-2.2 1.68-3.06.86-.98 1.9-1.62 3.08-1.9 1.16-.28 2.3-.28 3.34.06 1.16.39 1.9 1.2 2.25 2.3.32 1.03.2 2.2.05 3.28z"/></svg>'},
-  {id:"tg",title:"Telegram",svg:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M11.9 2C6.4 2 2 6.4 2 11.9c0 2.1.7 4.1 1.9 5.7L2.4 22l4.6-1.4c1.5.9 3.2 1.3 4.9 1.3 5.5 0 9.9-4.4 9.9-9.9C21.9 6.4 17.5 2 11.9 2zm5.2 7.7c-.2.2-2.7 1.3-3 .9-.3-.4 1.2-3 1-3.1h0c-.2-.1-1.6 1.1-2.6 1.7-1.2.7-2.4-.2-3.1-.9-.7-.7-1-.1-1.3.2-.3.4-1.9 2.2-2.3 2.6-.4.4-.9.3-.9-.1.4-2.5 1.6-5 1.6-5.1.2-.3 1.5-.4 2.6-.7 1.1-.3 2.3-.5 3.2-.3 1.6.3 2.6 1.1 2.8 2 .3 1.1-.5 2.1-1.1 2.6z"/></svg>'},
-  {id:"wa",title:"WhatsApp",svg:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M17.47 14.38c-.3-.15-1.78-.88-2.05-.98-.28-.1-.48-.15-.68.15-.2.3-.78.98-.95 1.18-.17.2-.35.22-.65.08-.3-.15-1.26-.47-2.4-1.48-.89-.79-1.48-1.76-1.66-2.06-.17-.3-.02-.46.13-.61.14-.13.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.38-.02-.53-.08-.15-.68-1.62-.93-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.5 0 1.47 1.07 2.9 1.22 3.1.15.2 2.11 3.22 5.1 4.51.72.31 1.27.5 1.7.63.72.23 1.37.2 1.88.12.58-.08 1.78-.73 2.03-1.43.25-.7.25-1.3.17-1.43-.07-.13-.27-.2-.57-.35zm-5.42 7.6h-.01a9.8 9.8 0 01-5-1.37l-.36-.21-3.71.97.99-3.62-.24-.37A9.8 9.8 0 012.15 12c0-5.43 4.42-9.85 9.86-9.85 2.63 0 5.1 1.03 6.96 2.88a9.78 9.78 0 012.88 6.97c0 5.43-4.42 9.84-9.85 9.84zm8.4-18.27A11.7 11.7 0 0012.01 0C5.4 0 .08 5.32.08 11.9c0 2.1.55 4.15 1.6 5.96L0 24l6.3-1.65a11.9 11.9 0 005.7 1.45c6.62 0 11.87-5.4 11.87-12.02 0-3.2-1.25-6.22-3.4-8.28z" transform="translate(.15)"/></svg>'},
-  {id:"yt",title:"YouTube",svg:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.38.5A3.02 3.02 0 00.5 6.19C0 8.07 0 12 0 12s0 3.93.5 5.81a3.02 3.02 0 002.12 2.14c1.88.5 9.38.5 9.38.5s7.5 0 9.38-.5a3.02 3.02 0 002.12-2.14C24 15.93 24 12 24 12s0-3.93-.5-5.81zM9.5 15.6V8.4L16 12l-6.5 3.6z"/></svg>'},
-  {id:"ig",title:"Instagram",svg:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.35 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23a3.7 3.7 0 01-.9 1.38c-.42.42-.82.68-1.38.9-.42.16-1.06.35-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.7 3.7 0 01-1.38-.9 3.7 3.7 0 01-.9-1.38c-.16-.42-.35-1.06-.41-2.23-.06-1.27-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.35 2.23-.41 1.27-.06 1.65-.07 4.85-.07M12 0C8.74 0 8.33.01 7.05.07 5.78.13 4.9.33 4.14.63a5.77 5.77 0 00-2.08 1.36A5.77 5.77 0 00.7 4.07c-.3.76-.5 1.64-.56 2.91C.07 8.33.07 8.74.07 12s.01 3.67.07 4.95c.06 1.27.26 2.15.56 2.91.3.76.71 1.42 1.36 2.08a5.77 5.77 0 002.08 1.36c.76.3 1.64.5 2.91.56C8.33 23.93 8.74 23.93 12 23.93s3.67-.01 4.95-.07c1.27-.06 2.15-.26 2.91-.56a5.77 5.77 0 002.08-1.36 5.77 5.77 0 001.36-2.08c.3-.76.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.27-.26-2.15-.56-2.91a5.77 5.77 0 00-1.36-2.08A5.77 5.77 0 0019.93.7c-.76-.3-1.64-.5-2.91-.56C15.67.02 15.26 0 12 0zm0 5.84A6.16 6.16 0 105.84 12 6.16 6.16 0 0012 5.84zM12 16a4 4 0 114-4 4 4 0 01-4 4zm7.84-10.6a1.44 1.44 0 11-1.44-1.44 1.44 1.44 0 011.44 1.44z"/></svg>'},
-  {id:"tt",title:"TikTok",svg:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19.32 5.56A5.49 5.49 0 0116.96 3v15.44c0 3.1-2.5 5.61-5.6 5.61a5.61 5.61 0 01-2.38-10.75v-5.9A7.54 7.54 0 0012.3 4.9a7.26 7.26 0 004.6-4.3h-2.22v5.5a5.61 5.61 0 01-5.61 5.61c-.53 0-1.04-.08-1.53-.22v2.22a3.43 3.43 0 103.42 6.22V0h2.26h.55c1.02 1.93 2.22 3.53 4.04 4.5a4.4 4.4 0 00-.09.88z"/></svg>'},
-  {id:"x",title:"X (Twitter)",svg:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.9 1.15h3.68l-8.04 9.19L24 22.85h-7.41l-5.8-7.58-6.64 7.58H.47l8.6-9.83L0 1.15h7.59l5.24 6.93zM17.62 20.65h2.04L6.49 3.24H4.3z"/></svg>'},
-  {id:"fb",title:"Facebook",svg:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.09 10.13 24v-8.44H7.08v-3.49h3.04V9.41c0-3.02 1.8-4.7 4.55-4.7 1.31 0 2.69.24 2.69.24v2.97h-1.52c-1.49 0-1.96.94-1.96 1.9v2.27h3.34l-.53 3.49h-2.8V24C19.61 23.09 24 18.1 24 12.07z"/></svg>'},
-  {id:"ok",title:"Одноклассники",svg:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 10.76a3.13 3.13 0 013.13-3.13A3.13 3.13 0 0118.26 10.76a3.13 3.13 0 01-3.13 3.13 3.13 3.13 0 01-3.13-3.13zm-3.48.36a3.13 3.13 0 013.13-3.13h0a3.13 3.13 0 013.13 3.13 3.13 3.13 0 01-3.13 3.13 3.13 3.13 0 01-3.13-3.13zM12 11.66a.63.63 0 10.63.63.62.62 0 00-.63-.63zM6.17 10.76a5.82 5.82 0 001.58 3.96 5.77 5.77 0 001.6 1.17l-1.64 1.64a1.37 1.37 0 101.94 1.94c.47-.47.93-.94 1.4-1.4.25-.26.5-.51.75-.78.24.27.5.52.75.78.47.47.94.93 1.4 1.4a1.37 1.37 0 101.94-1.94l-1.64-1.64a5.87 5.87 0 004.75-9.71A5.86 5.86 0 0012 4.9a5.86 5.86 0 00-5.83 5.86z"/></svg>'},
-  {id:"gh",title:"GitHub",svg:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 .3a12 12 0 00-3.79 23.39c.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.66-.3-5.47-1.33-5.47-5.93A4.64 4.64 0 014.9 6.64a4.33 4.33 0 01.12-3.16s1.05-.34 3.43 1.27a11.8 11.8 0 016.25 0c2.38-1.6 3.42-1.27 3.42-1.27a4.33 4.33 0 01.13 3.16 4.64 4.64 0 011.28 3.28c0 4.61-2.81 5.63-5.49 5.92.44.38.82 1.13.82 2.27v3.22c0 .32.22.7.82.58A12 12 0 0012 .3z"/></svg>'},
-  {id:"in",title:"LinkedIn",svg:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.07 2.07 0 110-4.14 2.07 2.07 0 010 4.14zm1.78 13.02H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>'}
-];
-function initSocPick(){
-  const wrap=$("#socPick");
-  if(!wrap) return;
-  socialSelected=[];
-  wrap.innerHTML="";
-  SOCIALS.forEach(s=>{
-    const b=document.createElement("button");
-    b.type="button"; b.className="spic bg-"+s.id; b.title=s.title; b.dataset.soc=s.id;
-    b.setAttribute("aria-label",s.title);
-    b.innerHTML=s.svg;
-    b.addEventListener("click",()=>{
-      b.classList.toggle("sel");
-      syncSocialHidden();
-    });
-    wrap.appendChild(b);
-  });
-}
-let socialSelected=[];
-function syncSocialHidden(){
-  socialSelected=$$("#socPick .spic.sel").map(b=>b.dataset.soc);
-  $("#inSocial").value=socialSelected.join(",");
-}
-function setSocPick(arr){
-  socialSelected=arr||[];
-  $$("#socPick .spic").forEach(b=>b.classList.toggle("sel", socialSelected.includes(b.dataset.soc)));
-  $("#inSocial").value=socialSelected.join(",");
-}
-function socPickedArr(v){ v=String(v||""); return v?v.split(/[,\s;]+/).filter(Boolean):[]; }
-function addSubBuild(){
-  const wrap=document.createElement("div");
-  wrap.className="subBuild";
-  const head=document.createElement("div"); head.className="sb-head";
-  const t=document.createElement("input"); t.type="text"; t.placeholder="Название таблицы"; t.setAttribute("aria-label","Название подтаблицы");
-  const del=document.createElement("button"); del.textContent="✕"; del.title="Удалить подтаблицу";
-  head.append(t,del);
-  const items=document.createElement("div"); items.className="sb-items";
-  const rec={titleEl:t, rows:[]};
-  function addRow(val){
-    const row=document.createElement("div"); row.className="sb-row";
-    const inp=document.createElement("input"); inp.type="text"; inp.placeholder="Пункт"; inp.value=val||""; inp.setAttribute("aria-label","Пункт таблицы");
-    const x=document.createElement("button"); x.textContent="✕";
-    x.addEventListener("click",()=>{ row.remove(); rec.rows=rec.rows.filter(r=>r!==inp); });
-    row.append(inp,x); items.appendChild(row);
-    rec.rows.push(inp);
-  }
-  del.addEventListener("click",()=>{ wrap.remove(); const i=subBuilders.indexOf(rec); if(i>-1)subBuilders.splice(i,1); });
-  wrap.append(head,items);
-  const addItemBtn=document.createElement("button"); addItemBtn.type="button"; addItemBtn.className="addItemBtn"; addItemBtn.textContent="＋ пункт";
-  addItemBtn.addEventListener("click",()=>addRow());
-  wrap.appendChild(addItemBtn);
-  subBuilder.appendChild(wrap);
-  subBuilders.push(rec);
-  addRow(); addRow();
-}
-$("#addSubBtn").addEventListener("click", addSubBuild);
-
-$$(".colorChooser .csw").forEach(b=>b.addEventListener("click", ()=>{
-  pending.color=b.dataset.c||"";
-  $$(".colorChooser .csw").forEach(x=>x.classList.toggle("sel", x===b));
-}));
-$("#saveBtn").addEventListener("click", ()=>{
-  pending.title = $("#inTitle").value.trim() || "Без названия";
-  pending.desc = $("#inDesc").value.trim();
-  pending.num   = $("#inNum").value.trim();
-  pending.addr  = $("#inAddr").value.trim();
-  pending.first = $("#inFirst").value.trim();
-  pending.last  = $("#inLast").value.trim();
-  pending.patr  = $("#inPatr").value.trim();
-  pending.fam   = $("#inFam").value.trim();
-  pending.habits= $("#inHabits").value.trim();
-  pending.traits= $("#inTraits").value.trim();
-  pending.hobby = $("#inHobby").value.trim();
-  pending.social= $("#inSocial").value.trim();
-  pending.school= $("#inSchool").value.trim();
-  pending.work  = $("#inWork").value.trim();
-  pending.notes = $("#inNotes").value.trim();
-  // collect sub-tables
-  pending.subs = subBuilders.map(r=>({
-    title:r.titleEl.value.trim(),
-    items:r.rows.map(inp=>inp.value.trim()).filter(Boolean)
-  })).filter(s=>s.title || s.items.length);
-  const ev = {...pending, id:nextId++, title:pending.title, desc:pending.desc,
-    px:viewX(40)+Math.random()*Math.max(innerWidth-300,10),
-    py:viewY(70)+Math.random()*Math.max(innerHeight-300,10)};
-  events.push(ev); save();
-  renderCard(ev); refreshEmpty();
-  modal.classList.remove("open");
-  resetModal();
-});
-
-function resetModal(){
-  $("#inTitle").value=""; $("#inDesc").value=""; previewBox.innerHTML=""; photoInput.value="";
-  ["#inNum","#inAddr","#inFirst","#inLast","#inPatr","#inFam","#inHabits","#inTraits","#inHobby","#inSocial","#inSchool","#inWork","#inNotes"].forEach(s=>{$(s).value="";});
-  $$(".colorChooser .csw").forEach(b=>b.classList.toggle("sel", b.dataset.c===""));
-  subBuilder.innerHTML=""; subBuilders.length=0;
-  addSubBuild();
-}
-
-// ---- detail / edit viewer opened by clicking a card ----
-const detailModal=$("#detailModal");
-let detailId=null;
-function openDetail(id, origin){
-  const e=events.find(x=>x.id===id);
-  if(!e) return;
-  detailId=id;
-  $("#detTitle").textContent="Детали события";
-  $("#detTitleIn").value=e.title||"";
-  $("#detDesc").value=e.desc||"";
-  $("#detNum").value=e.num||"";
-  $("#detAddr").value=e.addr||"";
-  $("#detFirst").value=e.first||"";
-  $("#detLast").value=e.last||"";
-  $("#detPatr").value=e.patr||"";
-  $("#detFam").value=e.fam||"";
-  $("#detSocial").value=e.social||"";
-  $("#detHabits").value=e.habits||"";
-  $("#detTraits").value=e.traits||"";
-  $("#detHobby").value=e.hobby||"";
-  $("#detSchool").value=e.school||"";
-  $("#detWork").value=e.work||"";
-  $("#detNotes").value=e.notes||"";
-  // prepare unfocused expansion start point
-  detailModal.classList.remove("open","collapsing");
-  detailModal.classList.add("expanding");
-  const box=detailModal.querySelector(".box");
-  if(origin){
-    // origin is top-left of the card; modal centers a 560px box — we approximate
-    const rw=Math.min(560,innerWidth*.92);
-    const startX=-(innerWidth/2-rw/2)+(origin.x-origin.w/2);
-    const startY=-(innerHeight/2)+(origin.y-origin.h/2);
-    box.style.setProperty("--sx", startX+"px");
-    box.style.setProperty("--sy", startY+"px");
-  }
-  forceReflow(detailModal);
-  detailModal.classList.remove("expanding");
-  detailModal.classList.add("open");
-}
-function forceReflow(el){ void el.offsetWidth; }
-$("#detCancel").addEventListener("click", ()=>detailModal.classList.remove("open"));
-detailModal.addEventListener("click", ev=>{ if(ev.target===detailModal) detailModal.classList.remove("open"); });
-$("#detSave").addEventListener("click", ()=>{
-  const e=events.find(x=>x.id===detailId);
-  if(!e) return;
-  e.title=$("#detTitleIn").value.trim()||"Без названия";
-  e.desc=$("#detDesc").value.trim();
-  e.num=$("#detNum").value.trim(); e.addr=$("#detAddr").value.trim();
-  e.first=$("#detFirst").value.trim(); e.last=$("#detLast").value.trim(); e.patr=$("#detPatr").value.trim();
-  e.fam=$("#detFam").value.trim(); e.social=$("#detSocial").value.trim();
-  e.habits=$("#detHabits").value.trim(); e.traits=$("#detTraits").value.trim();
-  e.hobby=$("#detHobby").value.trim(); e.school=$("#detSchool").value.trim();
-  e.work=$("#detWork").value.trim(); e.notes=$("#detNotes").value.trim();
-  save();
-  // re-render this card
-  const card=document.querySelector('#world .card[data-id="'+e.id+'"]');
-  if(card) card.remove();
-  renderCard(e);
-  detailModal.classList.remove("open");
-  flashMsg("Сохранено");
-});
-
-// clicking a card opens its details on double-click
-// (wired per-card inside renderCard)
-
-// Esc closes any open modal
-addEventListener("keydown", e=>{ if(e.key==="Escape"){ modal.classList.remove("open"); detailModal.classList.remove("open"); } });
-
-// ============ chronology switcher ============
-function switchChrono(c){
-  if(c==="new"){
-    chronos.push("Хронология "+(chronos.length+1));
-    chronoId=String(chronos.length);
-    saveChronos();
-  } else {
-    chronoId=String(Math.max(1,Math.min(chronos.length,Number(c))));
-  }
-  // reload data for this chronology
-  loadChronoSync();
-  buildChronoBar();
-  document.body.classList.add("chronoBarOpen");
-  flashMsg(chronos[Number(chronoId)-1]);
-}
-function loadChronoSync(){
-  events=[];
-  try{ const raw=localStorage.getItem(chronoKey("events")); if(raw) events=JSON.parse(raw); }catch(e){}
-  links=[];
-  try{ const raw=localStorage.getItem(chronoKey("links")); if(raw){links=JSON.parse(raw);} }catch(e){}
-  nextId=events.reduce((m,e)=>Math.max(m,Number(e.id)||0),0)+1;
-  $$("#world .card").forEach(c=>c.remove());
-  loadView();
-  events.forEach(renderCard);
-  refreshEmpty();
-  applyView();
-}
-function buildChronoBar(){
-  const bar=$("#chronoBar");
-  bar.innerHTML="";
-  const inner=(id,txt,cls,del)=>{
-    const wrap=document.createElement("span");
-    wrap.className="cbwrap";
-    const b=document.createElement("button");
-    b.className="cbt"+((cls?" "+cls:"")+(String(chronoId)===String(id)?" active":""));
-    b.textContent=txt;
-    b.addEventListener("click",()=>switchChrono(id));
-    wrap.appendChild(b);
-    if(del){
-      const x=document.createElement("button");
-      x.className="cbdel"; x.title="Удалить хронологию"; x.textContent="✕";
-      x.addEventListener("click",(ev)=>{ ev.stopPropagation(); deleteChrono(id); });
-      wrap.appendChild(x);
-    }
-    bar.appendChild(wrap);
-  };
-  chronos.forEach((name,i)=>{
-    inner(String(i+1),name,"",chronos.length>1);
-  });
-  inner("new","＋ Новая","plus");
-}
-function deleteChrono(id){
-  const target=Number(id);
-  if(!confirm(`Удалить «${chronos[target-1]}»? Это действие нельзя отменить.\nВсе события и связи этой хронологии будут удалены.`)) return;
-  // remove stored data
-  const rmKeys=["events","links","view"];
-  rmKeys.forEach(p=>{ try{ localStorage.removeItem("chrono2_"+p+"_"+target); }catch(e){} });
-  chronos.splice(target-1,1);
-  if(!chronos.length) chronos=["Хронология 1"];
-  saveChronos();
-  if(String(chronoId)===String(target) || target<Number(chronoId)){
-    chronoId=String(Math.min(Number(chronoId),chronos.length));
-  }
-  loadChronoSync();
-  buildChronoBar();
-  flashMsg("Хронология удалена");
-}
-buildChronoBar();
-document.body.classList.add("chronoBarOpen");
-
-// ============ init ============
-loadChronoSync();
+loadAll();
+if(!nodes.length){ seed(); }
+// default view if never saved
+if(!loaded){ panX=innerWidth/2-root.x; panY=innerHeight/2-root.y; }
+render();
+$("#fit").click();
 </script>
 </body>
 </html>
