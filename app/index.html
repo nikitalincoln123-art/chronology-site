@@ -52,6 +52,17 @@ body.web-off #web{opacity:0}
 #saveFile.on,#loadFile.on{background:#fff;color:#000;font-weight:700}
 #saveFile.on:hover{background:rgba(46,204,113,.4);color:#fff}
 #loadFile.on:hover{background:rgba(52,152,219,.4);color:#fff}
+/* chronology switcher bar */
+#chronoBar{position:fixed;top:0;left:0;right:0;z-index:29;display:flex;align-items:center;
+  gap:8px;padding:6px 18px;background:rgba(16,16,16,.85);backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--line-dim);overflow-x:auto}
+body.chronoBarOpen header{top:44px}
+#chronoBar .cbt{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
+  border-radius:10px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:all .2s}
+#chronoBar .cbt:hover{color:#fff;background:rgba(255,255,255,.1)}
+#chronoBar .cbt.active{background:#fff;color:#000;font-weight:700}
+#chronoBar .cbt.plus{border-style:dashed}
 /* status toggle buttons in header */
 .statusWrap{display:flex;gap:6px;height:46px}
 .stBtn{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
@@ -400,6 +411,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
   </div>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" aria-label="Загрузить файл">
 </header>
+<div id="chronoBar"></div>
 
 <div id="empty">
   <div class="plus">＋</div>
@@ -526,9 +538,19 @@ world.id = "world";
 board.appendChild(world);
 const empty = $("#empty");
 
+// ---- multiple chronologies ----
+let chronos=[];
+try{ const cr=localStorage.getItem("chrono_chronos"); if(cr) chronos=JSON.parse(cr); }catch(e){}
+if(!Array.isArray(chronos)||!chronos.length) chronos=["Хронология 1"];
+let chronoId = (new URLSearchParams(location.search).get("c"))||"1";
+if(chronoId==="new"){ chronos.push("Хронология "+(chronos.length+1)); chronoId=String(chronos.length); saveChronos(); }
+if(!chronos[Number(chronoId)-1]) chronoId="1";
+function saveChronos(){ try{ localStorage.setItem("chrono_chronos", JSON.stringify(chronos)); }catch(e){} }
+function chronoKey(prefix){ return "chrono_"+prefix+"_"+chronoId; }
+
 let events = [];
 try{
-  const raw = localStorage.getItem("chrono_events");
+  const raw = localStorage.getItem(chronoKey("events"));
   if(raw) events = JSON.parse(raw);
 }catch(e){}
 let nextId = 1;
@@ -682,13 +704,13 @@ webToggle.addEventListener("click", ()=>{
 let links=[];
 function loadLinks(){
   try{
-    const raw=localStorage.getItem("chrono_links");
+    const raw=localStorage.getItem(chronoKey("links"));
     if(raw) links=JSON.parse(raw);
     if(!Array.isArray(links)) links=[];
   }catch(e){ links=[]; }
 }
 loadLinks();
-function saveLinks(){ try{ localStorage.setItem("chrono_links", JSON.stringify(links)); }catch(e){} }
+function saveLinks(){ try{ localStorage.setItem(chronoKey("links"), JSON.stringify(links)); }catch(e){} }
 function hasLink(a,b){ return links.some(l=> (l[0]===a&&l[1]===b)||(l[0]===b&&l[1]===a)); }
 function addLink(a,b){ if(a!==b && !hasLink(a,b)){ links.push([a,b]); saveLinks(); } }
 function removeLink(a,b){ links=links.filter(l=>!( (l[0]===a&&l[1]===b)||(l[0]===b&&l[1]===a) )); saveLinks(); }
@@ -905,11 +927,11 @@ function applyView(){
 let viewTimer=null;
 function saveView(){
   clearTimeout(viewTimer);
-  viewTimer=setTimeout(()=>{ try{ localStorage.setItem("chrono_view", JSON.stringify({zoom,panX,panY})); }catch(e){} },300);
+  viewTimer=setTimeout(()=>{ try{ localStorage.setItem(chronoKey("view"), JSON.stringify({zoom,panX,panY})); }catch(e){} },300);
 }
 function loadView(){
   try{
-    const raw=localStorage.getItem("chrono_view");
+    const raw=localStorage.getItem(chronoKey("view"));
     if(raw){ const v=JSON.parse(raw); zoom=v.zoom||zoom; panX=v.panX??panX; panY=v.panY??panY; }
   }catch(e){}
 }
@@ -1416,7 +1438,7 @@ board.addEventListener("pointerdown", ev=>{
 });
 
 function save(){
-  try{ localStorage.setItem("chrono_events", JSON.stringify(events)); }catch(e){}
+  try{ localStorage.setItem(chronoKey("events"), JSON.stringify(events)); }catch(e){}
 }
 function refreshEmpty(){ empty.style.display = events.length? "none":"flex"; }
 
@@ -1712,11 +1734,51 @@ $("#detSave").addEventListener("click", ()=>{
 // Esc closes any open modal
 addEventListener("keydown", e=>{ if(e.key==="Escape"){ modal.classList.remove("open"); detailModal.classList.remove("open"); } });
 
+// ============ chronology switcher ============
+function switchChrono(c){
+  if(c==="new"){
+    chronos.push("Хронология "+(chronos.length+1));
+    chronoId=String(chronos.length);
+    saveChronos();
+  } else {
+    chronoId=String(Math.max(1,Math.min(chronos.length,Number(c))));
+  }
+  // reload data for this chronology
+  loadChronoSync();
+  buildChronoBar();
+  document.body.classList.add("chronoBarOpen");
+  flashMsg(chronos[Number(chronoId)-1]);
+}
+function loadChronoSync(){
+  events=[];
+  try{ const raw=localStorage.getItem(chronoKey("events")); if(raw) events=JSON.parse(raw); }catch(e){}
+  links=[];
+  try{ const raw=localStorage.getItem(chronoKey("links")); if(raw){links=JSON.parse(raw);} }catch(e){}
+  nextId=events.reduce((m,e)=>Math.max(m,Number(e.id)||0),0)+1;
+  $$("#world .card").forEach(c=>c.remove());
+  loadView();
+  events.forEach(renderCard);
+  refreshEmpty();
+  applyView();
+}
+function buildChronoBar(){
+  const bar=$("#chronoBar");
+  bar.innerHTML="";
+  const inner=(id,txt,cls)=>{
+    const b=document.createElement("button");
+    b.className="cbt"+((cls?" "+cls:"")+(String(chronoId)===String(id)?" active":""));
+    b.textContent=txt;
+    b.addEventListener("click",()=>switchChrono(id));
+    bar.appendChild(b);
+  };
+  chronos.forEach((name,i)=>inner(String(i+1),name));
+  inner("new","＋ Новая","plus");
+}
+buildChronoBar();
+document.body.classList.add("chronoBarOpen");
+
 // ============ init ============
-loadView();
-events.forEach(renderCard);
-refreshEmpty();
-applyView();
+loadChronoSync();
 </script>
 </body>
 </html>

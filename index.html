@@ -52,6 +52,13 @@ section{position:relative;z-index:1}
   50%{box-shadow:0 0 30px rgba(255,255,255,.28)}}
 @keyframes ctaShine{0%,55%{left:-120%}100%{left:140%}}
 .hero .note{margin-top:20px;color:rgba(255,255,255,.5);font-size:12px}
+.chronoTabs{display:flex;gap:10px;margin-top:26px;flex-wrap:wrap;justify-content:center}
+.ctab{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#eaf2ff;
+  border-radius:24px;padding:11px 22px;font-size:14px;font-weight:600;cursor:pointer;
+  font-family:inherit;backdrop-filter:blur(4px);transition:all .25s}
+.ctab:hover{background:rgba(255,255,255,.2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.ctab.active{background:#fff;color:#000;box-shadow:0 0 26px rgba(255,255,255,.35)}
+.ctab.plus{border-style:dashed}
 .badge{margin-top:26px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;font-weight:600;
   color:#ffd28a;background:rgba(255,170,60,.12);border:1px solid rgba(255,190,90,.5);
   border-radius:24px;padding:8px 18px;animation:breathe 2.4s ease-in-out infinite}
@@ -113,6 +120,11 @@ footer .dev{margin-top:8px;font-size:11px;letter-spacing:1px;text-transform:uppe
     <a class="btn centerCta" href="app/index.html">Открыть приложение</a>
   </div>
   <div class="note">Работает офлайн · всё сохраняется в вашем браузере</div>
+  <div class="chronoTabs">
+    <button class="ctab active" onclick="location.href='app/index.html?c=1'">Хронология 1</button>
+    <button class="ctab" onclick="location.href='app/index.html?c=2'">Хронология 2</button>
+    <button class="ctab plus" onclick="location.href='app/index.html?c=new'">＋ Новая</button>
+  </div>
   <div class="badge">Находится на ранней стадии разработки</div>
 </header>
 
