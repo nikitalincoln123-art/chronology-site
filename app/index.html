@@ -63,6 +63,13 @@ body.chronoBarOpen header{top:44px}
 #chronoBar .cbt:hover{color:#fff;background:rgba(255,255,255,.1)}
 #chronoBar .cbt.active{background:#fff;color:#000;font-weight:700}
 #chronoBar .cbt.plus{border-style:dashed}
+#chronoBar .cbwrap{position:relative;display:inline-flex}
+#chronoBar .cbdel{position:absolute;top:-7px;right:-7px;width:18px;height:18px;border-radius:50%;
+  border:1px solid #000;background:#ff5b5b;color:#fff;cursor:pointer;font-size:11px;line-height:1;
+  display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.5);
+  opacity:0;transition:opacity .2s}
+#chronoBar .cbwrap:hover .cbdel{opacity:1}
+#chronoBar .cbdel:hover{background:#ff3b3b;transform:scale(1.15)}
 /* status toggle buttons in header */
 .statusWrap{display:flex;gap:6px;height:46px}
 .stBtn{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
@@ -1764,15 +1771,42 @@ function loadChronoSync(){
 function buildChronoBar(){
   const bar=$("#chronoBar");
   bar.innerHTML="";
-  const inner=(id,txt,cls)=>{
+  const inner=(id,txt,cls,del)=>{
+    const wrap=document.createElement("span");
+    wrap.className="cbwrap";
     const b=document.createElement("button");
     b.className="cbt"+((cls?" "+cls:"")+(String(chronoId)===String(id)?" active":""));
     b.textContent=txt;
     b.addEventListener("click",()=>switchChrono(id));
-    bar.appendChild(b);
+    wrap.appendChild(b);
+    if(del){
+      const x=document.createElement("button");
+      x.className="cbdel"; x.title="Удалить хронологию"; x.textContent="✕";
+      x.addEventListener("click",(ev)=>{ ev.stopPropagation(); deleteChrono(id); });
+      wrap.appendChild(x);
+    }
+    bar.appendChild(wrap);
   };
-  chronos.forEach((name,i)=>inner(String(i+1),name));
+  chronos.forEach((name,i)=>{
+    inner(String(i+1),name,"",chronos.length>1);
+  });
   inner("new","＋ Новая","plus");
+}
+function deleteChrono(id){
+  const target=Number(id);
+  if(!confirm(`Удалить «${chronos[target-1]}»? Это действие нельзя отменить.\nВсе события и связи этой хронологии будут удалены.`)) return;
+  // remove stored data
+  const rmKeys=["events","links","view"];
+  rmKeys.forEach(p=>{ try{ localStorage.removeItem("chrono_"+p+"_"+target); }catch(e){} });
+  chronos.splice(target-1,1);
+  if(!chronos.length) chronos=["Хронология 1"];
+  saveChronos();
+  if(String(chronoId)===String(target) || target<Number(chronoId)){
+    chronoId=String(Math.min(Number(chronoId),chronos.length));
+  }
+  loadChronoSync();
+  buildChronoBar();
+  flashMsg("Хронология удалена");
 }
 buildChronoBar();
 document.body.classList.add("chronoBarOpen");
