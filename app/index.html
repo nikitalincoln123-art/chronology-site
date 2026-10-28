@@ -319,12 +319,28 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
   cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s}
 .spic svg{width:20px;height:20px}
 .spic:hover{transform:translateY(-2px);border-color:#aaa}
-.spic.sel{border-color:#000;background:#111;color:#fff;box-shadow:0 0 0 2px #000}
+.spic.sel{border:2px solid #000;box-shadow:0 0 0 2px #000}
+/* brand colors for picker icons */
+.spic.bg-vk{background:#0077ff;color:#fff}.spic.sel.bg-vk{border-color:#005bb5}
+.spic.bg-tg{background:#29b6f6;color:#fff}.spic.sel.bg-tg{border-color:#0088cc}
+.spic.bg-wa{background:#25d366;color:#fff}.spic.sel.bg-wa{border-color:#128c7e}
+.spic.bg-yt{background:#ff0000;color:#fff}.spic.sel.bg-yt{border-color:#b30000}
+.spic.bg-ig{background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff}
+.spic.bg-tt{background:#111;color:#fff}.spic.sel.bg-tt{border-color:#000}
+.spic.bg-x{background:#0f1419;color:#fff}.spic.sel.bg-x{border-color:#000}
+.spic.bg-fb{background:#1877f2;color:#fff}.spic.sel.bg-fb{border-color:#0f5bb5}
+.spic.bg-ok{background:#ee8208;color:#fff}.spic.sel.bg-ok{border-color:#c76a00}
+.spic.bg-gh{background:#24292e;color:#fff}.spic.sel.bg-gh{border-color:#111}
+.spic.bg-in{background:#0a66c2;color:#fff}.spic.sel.bg-in{border-color:#084e8f}
 .card .cardSocials{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 8px}
-.card .cardSocials .csoc{width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.08);
-  color:#333;display:flex;align-items:center;justify-content:center}
+.card .cardSocials .csoc{width:26px;height:26px;border-radius:50%;color:#fff;
+  display:flex;align-items:center;justify-content:center}
 .card .cardSocials .csoc svg{width:14px;height:14px}
-.card.themed .cardSocials .csoc{background:rgba(0,0,0,.14)}
+/* brand colors for on-card icons */
+.csoc.bg-vk{background:#0077ff}.csoc.bg-tg{background:#29b6f6}.csoc.bg-wa{background:#25d366}
+.csoc.bg-yt{background:#ff0000}.csoc.bg-ig{background:linear-gradient(45deg,#f09433,#bc1888)}
+.csoc.bg-tt{background:#121212}.csoc.bg-x{background:#0f1419}.csoc.bg-fb{background:#1877f2}
+.csoc.bg-ok{background:#ee8208}.csoc.bg-gh{background:#24292e}.csoc.bg-in{background:#0a66c2}
 
 #photoField label{border:1.5px dashed #bbb;border-radius:10px;padding:16px;text-align:center;
   cursor:pointer;display:block;transition:all .2s;color:#666;font-size:14px}
@@ -1150,7 +1166,7 @@ function renderCard(e){
     const s=SOCIALS.find(x=>x.id===id);
     if(s){
       const ic=document.createElement("span");
-      ic.className="csoc"; ic.title=s.title; ic.innerHTML=s.svg;
+      ic.className="csoc bg-"+s.id; ic.title=s.title; ic.innerHTML=s.svg;
       socBox.appendChild(ic);
     }
   });
@@ -1537,7 +1553,7 @@ function initSocPick(){
   wrap.innerHTML="";
   SOCIALS.forEach(s=>{
     const b=document.createElement("button");
-    b.type="button"; b.className="spic"; b.title=s.title; b.dataset.soc=s.id;
+    b.type="button"; b.className="spic bg-"+s.id; b.title=s.title; b.dataset.soc=s.id;
     b.setAttribute("aria-label",s.title);
     b.innerHTML=s.svg;
     b.addEventListener("click",()=>{
