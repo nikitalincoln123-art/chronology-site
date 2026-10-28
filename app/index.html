@@ -40,6 +40,11 @@ body.web-off #web{opacity:0}
   transition:background .2s,color .2s,box-shadow .25s}
 #webToggle:hover{color:#fff;background:rgba(90,140,255,.35);border-color:rgba(120,170,255,.7)}
 #webToggle.on{background:#fff;color:#000;font-weight:700;box-shadow:0 0 22px rgba(255,255,255,.5)}
+#yellowToggle{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
+  border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
+  transition:background .2s,color .2s,box-shadow .25s}
+#yellowToggle:hover{color:#fff;background:rgba(255,200,80,.25);border-color:rgba(255,200,80,.6)}
+#yellowToggle.on{background:#ffd75e;color:#000;font-weight:700;box-shadow:0 0 20px rgba(255,200,80,.5)}
 #webClear{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
   border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
   transition:background .2s,color .2s,box-shadow .25s}
@@ -113,6 +118,11 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
 #resetView:hover{color:#fff;background:rgba(155,89,182,.4);border-color:rgba(190,130,255,.8)}
 
 /* add button */
+#docBtn{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
+  border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
+  transition:background .2s,color .2s,box-shadow .25s}
+#docBtn:hover{color:#fff;background:rgba(140,120,255,.4);border-color:rgba(170,150,255,.8)}
+#docBtn.on{background:#fff;color:#000;font-weight:700}
 #addBtn{border:1px solid #fff;background:#fff;color:#000;font-weight:700;
   border-radius:12px;padding:0 16px;height:46px;cursor:pointer;font-size:15px;
   letter-spacing:.5px;white-space:nowrap;transition:transform .15s,box-shadow .25s}
@@ -171,6 +181,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
   transition:all .15s}
 .card .tab:hover{background:rgba(0,0,0,.06)}
 .card .tab.on{background:#000;color:#fff;border-color:#000}
+.card .tab.on{background:#000!important;color:#fff!important;border-color:#000!important}
 .card .tabpage{display:none}
 .card .tabpage.on{display:block}
 .card .title{font-size:15px;font-weight:800;margin-bottom:6px;line-height:1.25}
@@ -182,20 +193,35 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
 .card .extraTable li::before{content:"· ";color:#888}
 .card .muted{font-size:11px;color:#666;margin-top:8px;font-style:italic}
 
+/* background photos on the board */
+.bgphoto{position:absolute;cursor:move;touch-action:none;border-radius:8px;user-select:none;
+  box-shadow:0 4px 20px rgba(0,0,0,.5);will-change:transform}
+.bgphoto img{display:block;max-width:240px;max-height:200px;object-fit:cover;border-radius:8px;pointer-events:none}
+.bgphoto .rm{position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;
+  border:none;background:#c00;color:#fff;cursor:pointer;font-size:12px;line-height:1;opacity:0;
+  transition:opacity .2s}
+.bgphoto:hover .rm{opacity:1}
+.bgphoto.selected{outline:2px solid rgba(255,255,255,.8)}
+
 /* card color themes — harmonious, readable */
 .card.c-red{--bg:#ffd6d1;--acc:#c0392b;--ink:#6b1510}
 .card.c-green{--bg:#d2f0dd;--acc:#1e8e4e;--ink:#0a4020}
 .card.c-gray{--bg:#e3e6ea;--acc:#5c6570;--ink:#232a31}
 .card.c-purple{--bg:#e5d9f8;--acc:#7a48c9;--ink:#3c2270}
 .card.c-yellow{--bg:#fceeb6;--acc:#b8860b;--ink:#5c4400}
+.card.c-black{--bg:#111318;--acc:#8a95a8;--ink:#eef2f8;--ink2:#cfd6e3}
 .card.themed{background:var(--bg);box-shadow:0 12px 34px rgba(0,0,0,.5),0 0 0 2px var(--acc)}
 .card.themed .head{border-bottom-color:var(--acc)}
 .card.themed .dot{background:var(--acc)}
 .card.themed .dt,.card.themed .title,.card.themed .subrow .k{color:var(--ink)}
-.card.themed .t,.card.themed .subrow{color:var(--ink)}
+.card.themed .t,.card.themed .subrow{color:var(--ink2)}
 .card.themed .tab.on{background:var(--acc);border-color:var(--acc)}
 .card.themed .tab{border-color:var(--acc)}
 .card.themed .swatch.sel{box-shadow:0 0 0 2px var(--acc)}
+.card.c-black .dt,.card.c-black .title{color:#fff}
+.card.c-black .t,.card.c-black .subrow,.card.c-black .subrow .k{color:#cfd6e3}
+.card.c-black .notes{background:rgba(255,255,255,.06);color:#dfe6f0}
+.card.c-black .body{color:#fff}
 .card .colorbar{display:flex;gap:5px;padding:8px 12px 4px}
 .card .swatch{width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.2);cursor:pointer;flex:none}
 .card .swatch.sel{box-shadow:0 0 0 2px #000}
@@ -329,6 +355,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
 .csw.c-gray{background:#a8aeb6;border-color:#a8aeb6;color:#fff}
 .csw.c-purple{background:#a878ff;border-color:#a878ff;color:#fff}
 .csw.c-yellow{background:#f0ce4d;border-color:#f0ce4d;color:#000}
+.csw.c-black{background:#111318;border-color:#111318;color:#fff}
 .csw.sel{box-shadow:0 0 0 3px #000}
 
 /* social icons picker + card display */
@@ -400,6 +427,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
 <header>
   <div class="logo">Хронология<b> / </b><span class="sl">Действия</span></div>
   <button id="addBtn">＋ Добавить событие</button>
+  <button id="docBtn" title="Создать документацию по досье">📄 Документация</button>
   <div id="clock">--:--:-- <span class="dz">МСК</span></div>
   <div id="zoom">
     <button id="zIn" title="Приблизить">＋</button>
@@ -409,7 +437,10 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
   <button id="resetView" title="Сбросить вид">Центр</button>
   <button id="linkBtn" title="Связать события">◎ Связи</button>
   <button id="webToggle" title="Показать/скрыть паутину">Паутина</button>
+  <button id="yellowToggle" title="Показать/скрыть жёлтую паутину (связи)">Жёлтая паутина</button>
   <button id="webClear" title="Убрать все связи паутины">Очистить паутину</button>
+  <button id="bgPhotoBtn" title="Добавить фото на фон">Фото на фон</button>
+  <input type="file" id="bgPhotoInput" accept="image/*" multiple style="display:none" aria-label="Фото на фон">
   <button id="saveFile" title="Сохранить всё в файл">Сохранить</button>
   <button id="loadFile" title="Загрузить из файла">Загрузить</button>
   <div class="statusWrap" id="statusWrap">
@@ -447,6 +478,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
           <button class="csw c-gray" data-c="gray" title="Серый">Серый</button>
           <button class="csw c-purple" data-c="purple" title="Фиолетовый">Фиолетовый</button>
           <button class="csw c-yellow" data-c="yellow" title="Жёлтый">Жёлтый</button>
+          <button class="csw c-black" data-c="black" title="Чёрный">Чёрный</button>
         </div>
       </div>
       <div id="titleField">
@@ -707,6 +739,18 @@ webToggle.addEventListener("click", ()=>{
   applyWebVisible();
 });
 
+// toggle yellow (manual) web
+const yellowToggle=$("#yellowToggle");
+let yellowVisible=true;
+try{ yellowVisible = localStorage.getItem("chrono_yellow")!=="0"; }catch(e){}
+function applyYellowVisible(){ yellowToggle.classList.toggle("on", yellowVisible); }
+applyYellowVisible();
+yellowToggle.addEventListener("click", ()=>{
+  yellowVisible=!yellowVisible;
+  try{ localStorage.setItem("chrono_yellow", yellowVisible?"1":"0"); }catch(e){}
+  applyYellowVisible();
+});
+
 // manual links: array of [idA, idB]
 let links=[];
 function loadLinks(){
@@ -853,6 +897,7 @@ function drawWeb(){
   });
 
   edges.forEach(edge=>{
+    if(edge.manual && !yellowVisible) return; // hide yellow web when disabled
     const a=edge.a, b=edge.b, id=edge.id;
     // bead state
     if(!beadData[id]) beadData[id]={u:.5,off:0};
@@ -1003,6 +1048,33 @@ function setCardStatus(e,done){
   refreshStatusUI();
   flashMsg(done?"Отмечено как завершено":"Отмечено как не завершено");
 }
+
+// ---- generate documentation from the selected dossier ----
+$("#docBtn").addEventListener("click",()=>{
+  if(activeStatusId===null){ flashMsg("Выберите карточку-досье"); return; }
+  const e=events.find(x=>x.id===activeStatusId);
+  if(!e) return;
+  const L=(l,v)=>v?`${l}: ${v}\n`:"";
+  let text=`ДОКУМЕНТАЦИЯ\n${'='.repeat(30)}\n`;
+  text+=`Заголовок: ${e.title||"—"}\n`;
+  text+=`Дата: ${e.y?`${e.y}.${String(e.mo||1).padStart(2,"0")}.${String(e.d||1).padStart(2,"0")}`:""}\n`;
+  if(e.desc) text+=`Описание:\n${e.desc}\n`;
+  text+="\n─ ЛИЧНЫЕ ДАННЫЕ ─\n";
+  [["Номер",e.num],["Адрес",e.addr],["Имя",e.first],["Фамилия",e.last],["Отчество",e.patr],["Семейное положение",e.fam],["Привычки",e.habits],["Черты характера",e.traits],["Хобби",e.hobby],["Соц.сети",e.social],["Учебное заведение",e.school],["Работа",e.work]].forEach(([k,v])=>{ text+=L(k,v); });
+  if(e.notes) text+=`\n─ ЗАМЕТКИ ─\n${e.notes}\n`;
+  if(e.subs&&e.subs.length){
+    text+="\n─ ПОДТАБЛИЦЫ ─\n";
+    e.subs.forEach(s=>{ text+=`\n${s.title||"Таблица"}\n`; (s.items||[]).forEach(it=>text+=`• ${it}\n`); });
+  }
+  text+="\nСтатус: "+(e.done?"Завершено":"Не завершено")+"\n";
+  const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="documentaciya-"+Date.now()+".txt";
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},100);
+  flashMsg("Документация создана");
+});
 // status shown ONLY via the small circle on the card head (no card color change)
 function applyCardStatusClass(el,e){
   el.classList.remove("st-done","st-undone");
@@ -1170,17 +1242,19 @@ function renderCard(e){
   el.querySelector(".title").textContent=e.title;
   // render inline color swatches
   const bar=el.querySelector(".colorbar");
-  const wnames=[["","Белый"],["red","Красный"],["green","Зелёный"],["gray","Серый"],["purple","Фиолетовый"],["yellow","Жёлтый"]];
+  const wnames=[["","Белый"],["red","Красный"],["green","Зелёный"],["gray","Серый"],["purple","Фиолетовый"],["yellow","Жёлтый"],["black","Чёрный"]];
+  const ALLCOLORS=["red","green","gray","purple","yellow","black"];
   wnames.forEach(w=>{
     const s=document.createElement("span");
     s.className="swatch "+(w[0]?"c-"+w[0]:"base")+(e.color===w[0]?" sel":"");
     if(!w[0]) s.style.background="#eee";
+    if(w[0]==="black") s.style.background="#111318";
     s.title=w[1];
     s.addEventListener("click", ev=>{
       ev.stopPropagation();
       e.color=w[0]||null;
       el.classList.toggle("themed", !!e.color);
-      if(e.color) el.classList.add("c-"+e.color); else ["c-red","c-green","c-gray","c-purple","c-yellow"].forEach(c=>el.classList.remove(c));
+      if(e.color) el.classList.add("c-"+e.color); else ALLCOLORS.forEach(c=>el.classList.remove(c));
       bar.querySelectorAll(".swatch").forEach(x=>x.classList.remove("sel"));
       s.classList.add("sel");
       save();
@@ -1554,6 +1628,36 @@ function addPreviewThumb(src){
   rm.addEventListener("click", ()=>{ fig.remove(); pending.photos=pending.photos.filter(x=>x!==src); });
   fig.append(img,rm); previewBox.appendChild(fig);
 }
+
+// ---- photos placed directly onto the board background ----
+const bgPhotoBtn=$("#bgPhotoBtn"), bgPhotoInput=$("#bgPhotoInput");
+function addBgPhoto(src){
+  const el=document.createElement("div");
+  el.className="bgphoto";
+  const img=document.createElement("img"); img.src=src;
+  const rm=document.createElement("button"); rm.className="rm"; rm.textContent="✕"; rm.title="Удалить фото";
+  el.append(img,rm);
+  const x=viewX(innerWidth/2-120)+Math.random()*80, y=viewY(innerHeight/2-100)+Math.random()*80;
+  el.style.left=x+"px"; el.style.top=y+"px";
+  rm.addEventListener("click",ev=>{ ev.stopPropagation(); el.remove(); });
+  let sx,sy,ox,oy,d=false;
+  el.addEventListener("pointerdown",ev=>{ if(ev.target.closest(".rm"))return; ev.stopPropagation();
+    d=true;sx=ev.clientX;sy=ev.clientY;ox=parseFloat(el.style.left);oy=parseFloat(el.style.top);el.classList.add("selected");el.setPointerCapture(ev.pointerId);});
+  el.addEventListener("pointermove",ev=>{ if(!d)return;
+    el.style.left=(ox+(ev.clientX-sx)/zoom)+"px"; el.style.top=(oy+(ev.clientY-sy)/zoom)+"px"; });
+  el.addEventListener("pointerup",()=>{ d=false; el.classList.remove("selected"); });
+  el.addEventListener("pointercancel",()=>{ d=false; el.classList.remove("selected"); });
+  world.appendChild(el);
+}
+bgPhotoBtn.addEventListener("click",()=>bgPhotoInput.click());
+bgPhotoInput.addEventListener("change",()=>{
+  Array.from(bgPhotoInput.files).forEach(file=>{
+    const rd=new FileReader();
+    rd.onload=ev=>addBgPhoto(ev.target.result);
+    rd.readAsDataURL(file);
+  });
+  bgPhotoInput.value="";
+});
 $("#inTitle").addEventListener("input", e=>pending.title=e.target.value);
 $("#inDesc").addEventListener("input", e=>pending.desc=e.target.value);
 
