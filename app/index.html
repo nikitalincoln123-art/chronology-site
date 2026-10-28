@@ -81,11 +81,6 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
   box-shadow:0 0 20px rgba(255,255,255,.08)}
 #clock .dz{font-weight:400;opacity:.6;font-size:12px;margin-left:8px}
 
-#devBadge{font-size:13px;letter-spacing:.3px;color:#ffd28a;background:rgba(255,170,60,.12);
-  border:1px solid rgba(255,190,90,.55);border-radius:12px;padding:0 16px;height:46px;
-  display:flex;align-items:center;font-weight:600;white-space:nowrap;
-  box-shadow:0 0 20px rgba(255,170,60,.15)}
-
 /* zoom & pan controls */
 #zoom{display:flex;align-items:center;gap:2px;background:var(--panel);
   border:1px solid var(--line-dim);border-radius:12px;padding:2px 4px;height:46px}
@@ -101,8 +96,8 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
 
 /* add button */
 #addBtn{border:1px solid #fff;background:#fff;color:#000;font-weight:700;
-  border-radius:12px;padding:0 18px;height:46px;cursor:pointer;font-size:15px;
-  letter-spacing:.5px;transition:transform .15s,box-shadow .25s}
+  border-radius:12px;padding:0 16px;height:46px;cursor:pointer;font-size:15px;
+  letter-spacing:.5px;white-space:nowrap;transition:transform .15s,box-shadow .25s}
 #addBtn:hover{transform:scale(1.04);box-shadow:0 0 24px rgba(255,255,255,.35);background:#fff0d0;border-color:#7a4a00;color:#7a4a00}
 #addBtn:active{transform:scale(.97)}
 
@@ -359,7 +354,6 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
   <div class="logo">Хронология<b> / </b><span class="sl">Действия</span></div>
   <button id="addBtn">＋ Добавить событие</button>
   <div id="clock">--:--:-- <span class="dz">МСК</span></div>
-  <div id="devBadge">Находится на ранней стадии разработки</div>
   <div id="zoom">
     <button id="zIn" title="Приблизить">＋</button>
     <span class="pct" id="zPct">100%</span>
