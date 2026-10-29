@@ -40,11 +40,6 @@ body.web-off #web{opacity:0}
   transition:background .2s,color .2s,box-shadow .25s}
 #webToggle:hover{color:#fff;background:rgba(90,140,255,.35);border-color:rgba(120,170,255,.7)}
 #webToggle.on{background:#fff;color:#000;font-weight:700;box-shadow:0 0 22px rgba(255,255,255,.5)}
-#yellowToggle{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
-  border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
-  transition:background .2s,color .2s,box-shadow .25s}
-#yellowToggle:hover{color:#fff;background:rgba(255,200,80,.25);border-color:rgba(255,200,80,.6)}
-#yellowToggle.on{background:#ffd75e;color:#000;font-weight:700;box-shadow:0 0 20px rgba(255,200,80,.5)}
 #webClear{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
   border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
   transition:background .2s,color .2s,box-shadow .25s}
@@ -121,8 +116,17 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
 #docBtn{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
   border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
   transition:background .2s,color .2s,box-shadow .25s}
-#docBtn:hover{color:#fff;background:rgba(140,120,255,.4);border-color:rgba(170,150,255,.8)}
+#docBtn:hover{color:#fff;background:var(--panel);border-color:rgba(255,255,255,.35)}
 #docBtn.on{background:#fff;color:#000;font-weight:700}
+#moreBtn{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
+  border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
+  transition:background .2s,color .2s,box-shadow .25s}
+#moreBtn:hover{color:#fff;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.35)}
+#morePanel{position:fixed;top:64px;right:16px;z-index:40;display:none;flex-direction:column;gap:8px;
+  background:rgba(14,19,30,.97);backdrop-filter:blur(10px);border:1px solid var(--line-dim);
+  border-radius:14px;padding:12px;box-shadow:0 18px 50px rgba(0,0,0,.6);min-width:210px}
+#morePanel.open{display:flex}
+body.chronoBarOpen #morePanel{top:106px}
 #addBtn{border:1px solid #fff;background:#fff;color:#000;font-weight:700;
   border-radius:12px;padding:0 16px;height:46px;cursor:pointer;font-size:15px;
   letter-spacing:.5px;white-space:nowrap;transition:transform .15s,box-shadow .25s}
@@ -427,7 +431,6 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
 <header>
   <div class="logo">Хронология<b> / </b><span class="sl">Действия</span></div>
   <button id="addBtn">＋ Добавить событие</button>
-  <button id="docBtn" title="Создать документацию по досье">📄 Документация</button>
   <div id="clock">--:--:-- <span class="dz">МСК</span></div>
   <div id="zoom">
     <button id="zIn" title="Приблизить">＋</button>
@@ -437,17 +440,20 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
   <button id="resetView" title="Сбросить вид">Центр</button>
   <button id="linkBtn" title="Связать события">◎ Связи</button>
   <button id="webToggle" title="Показать/скрыть паутину">Паутина</button>
-  <button id="yellowToggle" title="Показать/скрыть жёлтую паутину (связи)">Жёлтая паутина</button>
-  <button id="webClear" title="Убрать все связи паутины">Очистить паутину</button>
-  <button id="bgPhotoBtn" title="Добавить фото на фон">Фото на фон</button>
-  <input type="file" id="bgPhotoInput" accept="image/*" multiple style="display:none" aria-label="Фото на фон">
-  <button id="saveFile" title="Сохранить всё в файл">Сохранить</button>
-  <button id="loadFile" title="Загрузить из файла">Загрузить</button>
-  <div class="statusWrap" id="statusWrap">
-    <button id="doneBtn" class="stBtn" title="Работа завершена"><span class="led"></span>Завершено</button>
-    <button id="undoneBtn" class="stBtn" title="Работа не завершена"><span class="led"></span>Не завершено</button>
+  <button id="moreBtn" title="Ещё инструменты и настройки">⋯ Ещё</button>
+  <div id="morePanel">
+    <button id="docBtn" title="Создать документацию по досье">Документация</button>
+    <button id="webClear" title="Убрать все связи паутины">Очистить паутину</button>
+    <button id="bgPhotoBtn" title="Добавить фото на фон">Фото на фон</button>
+    <input type="file" id="bgPhotoInput" accept="image/*" multiple style="display:none" aria-label="Фото на фон">
+    <button id="saveFile" title="Сохранить всё в файл">Сохранить</button>
+    <button id="loadFile" title="Загрузить из файла">Загрузить</button>
+    <div class="statusWrap" id="statusWrap">
+      <button id="doneBtn" class="stBtn" title="Работа завершена"><span class="led"></span>Завершено</button>
+      <button id="undoneBtn" class="stBtn" title="Работа не завершена"><span class="led"></span>Не завершено</button>
+    </div>
+    <input type="file" id="importFile" accept=".json,application/json" style="display:none" aria-label="Загрузить файл">
   </div>
-  <input type="file" id="importFile" accept=".json,application/json" style="display:none" aria-label="Загрузить файл">
 </header>
 <div id="chronoBar"></div>
 
@@ -739,18 +745,6 @@ webToggle.addEventListener("click", ()=>{
   applyWebVisible();
 });
 
-// toggle yellow (manual) web
-const yellowToggle=$("#yellowToggle");
-let yellowVisible=true;
-try{ yellowVisible = localStorage.getItem("chrono_yellow")!=="0"; }catch(e){}
-function applyYellowVisible(){ yellowToggle.classList.toggle("on", yellowVisible); }
-applyYellowVisible();
-yellowToggle.addEventListener("click", ()=>{
-  yellowVisible=!yellowVisible;
-  try{ localStorage.setItem("chrono_yellow", yellowVisible?"1":"0"); }catch(e){}
-  applyYellowVisible();
-});
-
 // manual links: array of [idA, idB]
 let links=[];
 function loadLinks(){
@@ -897,7 +891,6 @@ function drawWeb(){
   });
 
   edges.forEach(edge=>{
-    if(edge.manual && !yellowVisible) return; // hide yellow web when disabled
     const a=edge.a, b=edge.b, id=edge.id;
     // bead state
     if(!beadData[id]) beadData[id]={u:.5,off:0};
@@ -1608,6 +1601,11 @@ function renderList(){
 $("#addBtn").addEventListener("click", openModal);
 $("#cancelBtn").addEventListener("click", ()=>modal.classList.remove("open"));
 modal.addEventListener("click", e=>{ if(e.target===modal) modal.classList.remove("open"); });
+
+// toggle "Ещё" dropdown panel
+const moreBtn=$("#moreBtn"), morePanel=$("#morePanel");
+moreBtn.addEventListener("click", e=>{ e.stopPropagation(); morePanel.classList.toggle("open"); });
+document.addEventListener("click", e=>{ if(!e.target.closest("#morePanel")&&!e.target.closest("#moreBtn")) morePanel.classList.remove("open"); });
 
 // photos
 const photoInput=$("#inPhoto"), previewBox=$("#preview");
