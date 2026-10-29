@@ -156,10 +156,19 @@ body.chronoBarOpen #morePanel{top:106px}
   will-change:transform;transform-style:preserve-3d;
   transition:transform .35s cubic-bezier(.2,1.2,.3,1), box-shadow .4s ease, background .3s ease, border-radius .35s ease;
   }
-.card::after{content:"";position:absolute;inset:0;border-radius:14px;pointer-events:none;
-  background:linear-gradient(140deg,rgba(255,255,255,.25),transparent 45%);opacity:0;
-  transition:opacity .4s ease}
-.card:hover::after{opacity:1}
+.card::before{content:"";position:absolute;inset:0;border-radius:14px;pointer-events:none;overflow:hidden;z-index:0;
+  background:linear-gradient(115deg,transparent 20%,rgba(255,255,255,.5) 40%,transparent 60%);
+  background-size:280% 280%;animation:sheen 6s ease-in-out infinite}
+.card.themed::before{background:linear-gradient(120deg,transparent 15%,rgba(255,255,255,.65) 38%,transparent 62%);
+  background-size:280% 280%;animation:sheen 5s ease-in-out infinite}
+.card.c-black::before{background:linear-gradient(120deg,transparent 20%,rgba(200,215,255,.35) 42%,transparent 64%);
+  background-size:280% 280%;animation:sheen 7s ease-in-out infinite}
+@keyframes sheen{0%{background-position:120% 0}55%{background-position:-60% 0}100%{background-position:-120% 0}}
+.card > *{position:relative;z-index:1}
+.card > .glowAccent{z-index:2}
+@keyframes cardBreath{0%,100%{background:var(--bg)}50%{background:linear-gradient(135deg,var(--bg) 55%,color-mix(in srgb,var(--acc) 22%,var(--bg)))}}
+.card.themed{background:var(--bg);box-shadow:0 12px 34px rgba(0,0,0,.5),0 0 0 2px var(--acc)}
+.card.themed.animated{animation:pop .55s cubic-bezier(.2,1.4,.3,1),cardBreath 6s ease-in-out infinite}
 .card.hovering{z-index:30;box-shadow:0 24px 55px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.14),0 0 40px rgba(180,200,255,.22)}
 .card.dragging{cursor:grabbing;box-shadow:0 18px 50px rgba(0,0,0,.7);z-index:50;
   transition:box-shadow .2s,transform .15s}
@@ -1243,7 +1252,7 @@ function renderCard(e){
   el.className="card";
   el.dataset.id = e.id;
   applyCardStatusClass(el, e);
-  if(e.color) el.classList.add("themed","c-"+e.color);
+  if(e.color) el.classList.add("themed","animated","c-"+e.color);
   const photos = (e.photos||[]).map(src=>`<img src="${src}" alt="фото">`).join("");
   el.innerHTML = `
     <span class="glowAccent"></span>
@@ -1297,6 +1306,7 @@ function renderCard(e){
       ev.stopPropagation();
       e.color=w[0]||null;
       el.classList.toggle("themed", !!e.color);
+      el.classList.toggle("animated", !!e.color);
       if(e.color) el.classList.add("c-"+e.color); else ALLCOLORS.forEach(c=>el.classList.remove(c));
       bar.querySelectorAll(".swatch").forEach(x=>x.classList.remove("sel"));
       s.classList.add("sel");
