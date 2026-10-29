@@ -304,7 +304,13 @@ body.chronoBarOpen #morePanel{top:106px}
 .box{width:min(560px,92vw);max-height:86vh;overflow:auto;background:#fff;color:#000;
   border-radius:10px;box-shadow:0 30px 80px rgba(0,0,0,.6);animation:rise .4s cubic-bezier(.2,1.3,.3,1)}
 @keyframes rise{from{transform:translateY(30px) scale(.96);opacity:0}to{transform:none;opacity:1}}
-.box h3{font-size:18px;padding:18px 22px;border-bottom:1px solid #e5e5e5}
+.box h3{font-size:18px;padding:18px 22px;border-bottom:1px solid #e5e5e5;display:flex;align-items:center;gap:12px;justify-content:space-between}
+.themeToggle{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;font-weight:600;color:#666;user-select:none}
+.themeToggle input{display:none}
+.themeToggle .track{width:36px;height:20px;border-radius:20px;background:#ccc;position:relative;transition:background .2s;flex:none}
+.themeToggle .track::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .2s}
+.themeToggle input:checked + .track{background:#eef2f8}
+.themeToggle input:checked + .track::after{transform:translateX(16px);background:#111}
 
 /* animated time/date picker inside modal (spin slots) */
 .selectors{display:flex;gap:8px;flex-wrap:wrap;padding:20px 22px 6px}
@@ -418,6 +424,39 @@ body.chronoBarOpen #morePanel{top:106px}
 #saveBtn{background:#000;color:#fff}
 #saveBtn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.3)}
 
+/* ---- dark theme inside the modal ---- */
+.box.dark{background:#0b0b0f;color:#f2f4f8}
+.box.dark h3{border-bottom-color:#262a33;color:#fff}
+.box.dark .themeToggle{color:#9aa3b2}
+.box.dark .slot{border-color:#2c323d;background:#14161c}
+.box.dark .slot .kind{color:#8891a0}
+.box.dark .slot .num{color:#f4f6fa}
+.box.dark .slot .sub{color:#7f8896}
+.box.dark .slot.active{border-color:#eef2f8;box-shadow:0 0 0 2px #eef2f8,0 8px 20px rgba(0,0,0,.5)}
+.box.dark .slot.active::after{background:#eef2f8}
+.box.dark #slotList{border-color:#262a33;background:#101116}
+.box.dark #slotList button{border-bottom-color:#20242c;color:#e8ebf1}
+.box.dark #slotList button:hover{background:#eef2f8;color:#000}
+.box.dark .fields input[type=text],.box.dark .fields textarea,.box.dark .fields input[type=number]{
+  border-color:#2c323d;background:#14161c;color:#fff}
+.box.dark .fields input:focus,.box.dark .fields textarea:focus{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.box.dark .fields label{color:#9aa3b2}
+.box.dark .profileBlock{border-color:#2a2f3a;background:#101116}
+.box.dark .profileBlock h4{color:#fff}
+.box.dark .subBuild{border-color:#2c323d;background:#14161c}
+.box.dark .subBuild .sb-head button,.box.dark .subBuild .sb-row button{border-color:#2c323d;background:#1a1d24;color:#ff8a8a}
+.box.dark #addSubBtn,.box.dark .addItemBtn{border-color:#3a414f;background:#14161c;color:#aab2bf}
+.box.dark .csw{border-color:#3a414f;background:#1a1d24;color:#fff}
+.box.dark .csw.sel{border-color:#fff;box-shadow:0 0 0 2px #fff}
+.box.dark #photoField label{border-color:#3a414f;color:#aab2bf}
+.box.dark #photoField label:hover{border-color:#fff;color:#fff}
+.box.dark #preview img{border-color:#2c323d}
+.box.dark .actions{border-top-color:#262a33}
+.box.dark .actions button{border-color:#eef2f8}
+.box.dark #cancelBtn{background:#1a1d24;color:#fff}
+.box.dark #cancelBtn:hover{background:#262b36}
+.box.dark .spic{border-color:#3a414f;background:#1a1d24;color:#aab2bf}
+
 @media (max-width:1500px){
   header{flex-wrap:wrap;gap:8px;padding:10px 14px;position:relative}
 }
@@ -480,7 +519,9 @@ body.chronoBarOpen #morePanel{top:106px}
 
 <div class="modal" id="modal">
   <div class="box">
-    <h3 id="modalTitle">Новое событие</h3>
+    <h3 id="modalTitle">Новое событие
+      <label class="themeToggle" title="Переключить тему"><input type="checkbox" id="themeChk"><span class="track"></span>Тёмная</label>
+    </h3>
     <div class="selectors" id="selectors"></div>
     <div id="slotList"></div>
     <div class="fields">
@@ -1536,6 +1577,9 @@ function openModal(){
   else setSocPick([]);
   buildSelectors();
   renderList();
+  const dark = localStorage.getItem("modalDark")==="1";
+  $("#themeChk").checked = dark;
+  document.querySelector(".box").classList.toggle("dark", dark);
   modal.classList.add("open");
 }
 function buildSelectors(){
@@ -1725,6 +1769,10 @@ $$(".colorChooser .csw").forEach(b=>b.addEventListener("click", ()=>{
   pending.color=b.dataset.c||"";
   $$(".colorChooser .csw").forEach(x=>x.classList.toggle("sel", x===b));
 }));
+$("#themeChk").addEventListener("change", function(){
+  document.querySelector(".box").classList.toggle("dark", this.checked);
+  localStorage.setItem("modalDark", this.checked?"1":"0");
+});
 $("#saveBtn").addEventListener("click", ()=>{
   pending.title = $("#inTitle").value.trim() || "Без названия";
   pending.desc = $("#inDesc").value.trim();
