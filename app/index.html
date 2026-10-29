@@ -160,9 +160,7 @@ body.chronoBarOpen #morePanel{top:106px}
   background:linear-gradient(140deg,rgba(255,255,255,.25),transparent 45%);opacity:0;
   transition:opacity .4s ease}
 .card:hover::after{opacity:1}
-/* tilt toward cursor, driven by CSS vars --tx/--ty/--rot set in JS */
-.card.hovering{transform:translateY(-6px);transition:transform .18s ease,box-shadow .25s ease;
-  z-index:30;box-shadow:0 30px 70px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.14),0 0 50px rgba(180,200,255,.25)}
+.card.hovering{z-index:30;box-shadow:0 24px 55px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.14),0 0 40px rgba(180,200,255,.22)}
 .card.dragging{cursor:grabbing;box-shadow:0 18px 50px rgba(0,0,0,.7);z-index:50;
   transition:box-shadow .2s,transform .15s}
 @keyframes pop{from{transform:scale(.6) rotateZ(-3deg);opacity:0}to{transform:scale(1) rotateZ(0);opacity:1}}
