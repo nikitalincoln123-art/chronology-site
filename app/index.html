@@ -122,16 +122,23 @@ header{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:c
   border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
   transition:background .2s,color .2s,box-shadow .25s}
 #moreBtn:hover{color:#fff;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.35)}
-#morePanel{position:fixed;top:64px;right:16px;z-index:40;display:none;flex-direction:column;gap:8px;
-  background:rgba(14,19,30,.97);backdrop-filter:blur(10px);border:1px solid var(--line-dim);
-  border-radius:14px;padding:12px;box-shadow:0 18px 50px rgba(0,0,0,.6);min-width:210px}
-#morePanel.open{display:flex}
+#morePanel{position:fixed;top:64px;right:16px;z-index:40;flex-direction:column;gap:8px;
+  background:#000;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.16);
+  border-radius:16px;padding:12px;box-shadow:0 24px 60px rgba(0,0,0,.8),0 0 0 .5px rgba(255,255,255,.08);
+  min-width:218px;transform-origin:top right;pointer-events:none;opacity:0;
+  transform:translateY(-10px) scale(.96);
+  transition:opacity .22s ease,transform .22s cubic-bezier(.2,.9,.3,1.2)}
+#morePanel.open{display:flex;opacity:1;pointer-events:auto;
+  transform:translateY(0) scale(1)}
+#morePanel:not(.open){display:none}
 body.chronoBarOpen #morePanel{top:106px}
-#bgPhotoBtn{border:1px solid var(--line-dim);background:var(--panel);color:var(--muted);
-  border-radius:12px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;
-  transition:background .2s,color .2s,box-shadow .25s}
-#bgPhotoBtn:hover{color:#fff;background:rgba(90,160,255,.28);border-color:rgba(120,180,255,.65)}
-#bgPhotoBtn:active{transform:scale(.98)}
+#morePanel .sep{height:1px;background:rgba(255,255,255,.12);margin:2px -2px}
+#bgPhotoBtn,#docBtn,#webClear,#saveFile,#loadFile{border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.04);color:#cdd3e0;
+  border-radius:11px;padding:0 14px;height:46px;cursor:pointer;font-size:13px;width:100%;
+  transition:background .18s,color .18s,border-color .18s}
+#bgPhotoBtn:hover,#docBtn:hover,#webClear:hover,#saveFile:hover,#loadFile:hover{color:#fff;
+  background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.32)}
 #addBtn{border:1px solid #fff;background:#fff;color:#000;font-weight:700;
   border-radius:12px;padding:0 16px;height:46px;cursor:pointer;font-size:15px;
   letter-spacing:.5px;white-space:nowrap;transition:transform .15s,box-shadow .25s}
@@ -154,8 +161,7 @@ body.chronoBarOpen #morePanel{top:106px}
   transition:opacity .4s ease}
 .card:hover::after{opacity:1}
 /* tilt toward cursor, driven by CSS vars --tx/--ty/--rot set in JS */
-.card{--tx:0px;--ty:0px;--rot:0deg;--scale:1}
-.card.hovering{transform:translateY(-8px) translate(var(--tx),var(--ty)) rotate(var(--rot)) scale(var(--scale));
+.card.hovering{transform:translateY(-6px);transition:transform .18s ease,box-shadow .25s ease;
   z-index:30;box-shadow:0 30px 70px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.14),0 0 50px rgba(180,200,255,.25)}
 .card.dragging{cursor:grabbing;box-shadow:0 18px 50px rgba(0,0,0,.7);z-index:50;
   transition:box-shadow .2s,transform .15s}
@@ -1304,27 +1310,6 @@ function renderCard(e){
     setTimeout(()=>{ el.remove(); events=events.filter(x=>x.id!==e.id); links=links.filter(l=>l[0]!==e.id&&l[1]!==e.id); save(); saveLinks(); refreshEmpty(); },300);
   });
   makeDraggable(el, e);
-  // tilt the card toward the cursor on hover
-  el.addEventListener("mousemove", function(ev){
-    const r=el.getBoundingClientRect();
-    const cx=r.left+r.width/2, cy=r.top+r.height/2;
-    const dx=ev.clientX-cx, dy=ev.clientY-cy;
-    const maxRot=8, maxShift=8;
-    // normalize to -1..1
-    const nx=Math.max(-1,Math.min(1,dx/(r.width/2)));
-    const ny=Math.max(-1,Math.min(1,dy/(r.height/2)));
-    el.style.setProperty("--ty", (ny*maxShift)+"px");
-    el.style.setProperty("--rot", (-nx*maxRot)+"deg");
-    // slight push toward cursor: shift x a bit in cursor direction offset
-    el.style.setProperty("--tx", (nx*-3)+"px");
-    el.classList.add("hovering");
-  });
-  el.addEventListener("mouseleave", function(){
-    el.classList.remove("hovering");
-    el.style.setProperty("--tx","0px");
-    el.style.setProperty("--ty","0px");
-    el.style.setProperty("--rot","0deg");
-  });
   // reflect status in the head dot
   syncCardStatus(e);
   // click expands the card into fullscreen with animation & selects it for status
